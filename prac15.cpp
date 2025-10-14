@@ -5,6 +5,9 @@
 #include <gl/glew.h>
 #include <gl/freeglut.h>
 #include <gl/freeglut_ext.h>
+#include <gl/glm/glm.hpp>
+#include <gl/glm/ext.hpp>
+#include <gl/glm/gtc/matrix_transform.hpp>
 #include "tools.h"
 
 //--- 아래 5개 함수는 사용자 정의 함수 임
@@ -17,7 +20,39 @@ GLuint shaderProgramID; //--- 세이더 프로그램 이름
 GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
-Vertex bgColor = { 0.1f, 0.1f, 0.1f };
+glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
+
+class DisplayBasis {
+	ColoredVertex xyz[3][2] =
+	{
+	{ { { -1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } }, { { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } } },
+	{ { { 0.0f, -1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } }, { { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } } },
+	{ { { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f, 1.0f } }, { { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } } }
+	};
+
+	GLuint VAO, VBO;
+public:
+	DisplayBasis() {
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(xyz), xyz, GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)sizeof(glm::vec3));
+		glEnableVertexAttribArray(1);
+	}
+
+	void Render() {
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_LINES, 0, 6);
+	}
+};
+
+DisplayBasis* d_basis;
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -33,6 +68,9 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glewExperimental = GL_TRUE;
 	glewInit();
 
+	// 좌표축 디스플레이 초기화
+	d_basis = new DisplayBasis();
+
 	//--- 세이더 읽어와서 세이더 프로그램 만들기: 사용자 정의함수 호출
 	make_vertexShaders(vertexShader, "vertex.glsl"); //--- 버텍스 세이더 만들기
 	make_fragmentShaders(fragmentShader, "fragment.glsl"); //--- 프래그먼트 세이더 만들기
@@ -42,6 +80,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glutDisplayFunc(drawScene); //--- 출력 콜백 함수
 	glutReshapeFunc(Reshape);
 	glutMainLoop();
+	delete d_basis;
 }
 
 //--- 출력 콜백 함수
@@ -51,8 +90,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glClear(GL_COLOR_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
-	glPointSize(10.0f);
-	glDrawArrays(GL_POINTS, 0, 1);
+	d_basis->Render();
 
 	glutSwapBuffers(); // 화면에 출력하기
 }
