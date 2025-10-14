@@ -22,36 +22,6 @@ GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
 glm::vec3 bgColor = { 0.95f, 0.95f, 0.95f };
 
-class DisplayBasis {
-	ColoredVertex xyz[3][2] =
-	{
-	{ { { -1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } }, { { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } } },
-	{ { { 0.0f, -1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } }, { { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } } },
-	{ { { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f, 1.0f } }, { { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } } }
-	};
-
-	GLuint VAO, VBO;
-public:
-	DisplayBasis() {
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-		glBufferData(GL_ARRAY_BUFFER, sizeof(xyz), xyz, GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)sizeof(glm::vec3));
-		glEnableVertexAttribArray(1);
-	}
-
-	void Render() {
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINES, 0, 6);
-	}
-};
-
 DisplayBasis* d_basis;
 
 //--- 메인 함수

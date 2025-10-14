@@ -1,5 +1,28 @@
 #include "tools.h"
 
+DisplayBasis::DisplayBasis(GLfloat offset) {
+	for (int i = 0; i < 3; i++) {
+		xyz[i][0].pos *= offset;
+		xyz[i][1].pos *= offset;
+	}
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(xyz), xyz, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)sizeof(glm::vec3));
+	glEnableVertexAttribArray(1);
+}
+
+void DisplayBasis::Render() {
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_LINES, 0, 6);
+}
+
 glm::vec3 randColor() {
 	glm::vec3 color;
 	color.x = rand() / static_cast<GLfloat>(RAND_MAX);

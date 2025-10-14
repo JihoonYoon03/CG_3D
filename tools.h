@@ -18,6 +18,20 @@ struct ColoredVertex {
 	glm::vec3 color;
 };
 
+class DisplayBasis {
+	ColoredVertex xyz[3][2] =
+	{
+	{ { { -1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } }, { { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } } },
+	{ { { 0.0f, -1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } }, { { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } } },
+	{ { { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f, 1.0f } }, { { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } } }
+	};
+
+	GLuint VAO, VBO;
+public:
+	DisplayBasis(GLfloat offset = 1.0f);
+	void Render();
+};
+
 glm::vec3 randColor();
 
 void mPosToGL(GLuint winWidth, GLuint winHeight, int mx, int my, GLfloat& xGL, GLfloat& yGL);
