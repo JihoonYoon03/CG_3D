@@ -23,9 +23,34 @@ Cube::Cube(GLfloat offset) {
 	glEnableVertexAttribArray(1);
 }
 
+void Cube::DisplayOnly(int index) {
+	if (index < 0 || index >= 6) return;
+	if (lastDisplayFace == index) {
+		for (int i = 0; i < 6; i++) {
+			faceToggle[i] = false;
+		}
+		lastDisplayFace = -1;
+		return;
+	}
+
+	for (int i = 0; i < 6; i++) {
+		faceToggle[i] = true;
+	}
+	faceToggle[index] = false;
+	lastDisplayFace = index;
+}
+
 void Cube::Render() {
 	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	for (int i = 0; i < 6; i++) {
+		if (faceToggle[i]) continue;
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(i * 6 * sizeof(GLuint)));
+	}
+}
+
+void Cube::FaceOnOff(int index) {
+	if (index < 0 || index >= 6) return;
+	faceToggle[index] = !faceToggle[index];
 }
 
 DisplayBasis::DisplayBasis(GLfloat offset) {

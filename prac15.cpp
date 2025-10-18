@@ -13,6 +13,7 @@
 //--- 아래 5개 함수는 사용자 정의 함수 임
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
+GLvoid Keyboard(unsigned char key, int x, int y);
 GLvoid SpecialKey(int key, int x, int y);
 GLvoid SpecialKeyUp(int key, int x, int y);
 GLvoid Timer(int value);
@@ -59,6 +60,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	//--- 세이더 프로그램 만들기
 	glutDisplayFunc(drawScene); //--- 출력 콜백 함수
 	glutReshapeFunc(Reshape);
+	glutKeyboardFunc(Keyboard);
 	glutSpecialFunc(SpecialKey);
 	glutSpecialUpFunc(SpecialKeyUp);
 	glutTimerFunc(1000 / 60, Timer, 1);
@@ -86,6 +88,27 @@ GLvoid Reshape(int w, int h) //--- 콜백 함수: 다시 그리기 콜백 함수
 	glViewport(0, 0, w, h);
 }
 
+GLvoid Keyboard(unsigned char key, int x, int y)
+{
+	if ('1' <= key && key <= '6') {
+		cube->DisplayOnly(key - '1');
+		return;
+	}
+	switch (key) {
+	case 'r':
+		xRot = -30;
+		yRot = -30;
+		glm::mat4 rotation = glm::mat4(1.0f);
+		rotation = glm::rotate(rotation, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
+		rotation = glm::rotate(rotation, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(rotation));
+		break;
+	case 'q':
+		exit(0);
+		break;
+	}
+}
+
 GLvoid SpecialKey(int key, int x, int y)
 {
 	switch (key) {
@@ -108,16 +131,16 @@ GLvoid SpecialKeyUp(int key, int x, int y)
 {
 	switch (key) {
 	case GLUT_KEY_LEFT:
-		if (dyRot == 1.0f) dyRot -= 1.0f;
+		if (dyRot > 0.0f) dyRot -= 1.0f;
 		break;
 	case GLUT_KEY_RIGHT:
-		if (dyRot == -1.0f) dyRot += 1.0f;
+		if (dyRot < 0.0f) dyRot += 1.0f;
 		break;
 	case GLUT_KEY_UP:
-		if (dxRot == 1.0f) dxRot -= 1.0f;
+		if (dxRot > 0.0f) dxRot -= 1.0f;
 		break;
 	case GLUT_KEY_DOWN:
-		if (dxRot == -1.0f) dxRot += 1.0f;
+		if (dxRot < 0.0f) dxRot += 1.0f;
 		break;
 	}
 }

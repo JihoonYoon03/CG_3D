@@ -4,7 +4,6 @@
 #include <gl/freeglut.h>
 #include <gl/freeglut_ext.h>
 #include <gl/glm/glm.hpp>
-#include <gl/glm/glm.hpp>
 #include <gl/glm/ext.hpp>
 #include <gl/glm/gtc/matrix_transform.hpp>
 #include <string>
@@ -33,21 +32,38 @@ class Cube {
 		{ {  0.5f,  0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } },
 		{ { -0.5f,  0.5f, 0.5f }, { 1.0f, 1.0f, 0.0f } }
 	};
-	GLuint indices[12] =
+	GLuint indices[36] =
 	{
 		// 앞면
 		0, 1, 2,
 		0, 2, 3,
 		// 왼쪽면
 		4, 0, 3,
-		4, 3, 7
+		4, 3, 7,
+		// 윗면
+		3, 2, 6,
+		3, 6, 7,
+		// 오른쪽면
+		1, 5, 6,
+		1, 6, 2,
+		// 아랫면
+		4, 5, 1,
+		4, 1, 0,
+		// 뒷면
+		5, 4, 7,
+		5, 7, 6
 	};
+
+	bool faceToggle[6] = { false };
+	int lastDisplayFace = -1;
 
 	GLuint VAO, VBO, EBO;
 
 public:
 	Cube(GLfloat size = 1.0f);
 	void Render();
+	void DisplayOnly(int index);
+	void FaceOnOff(int index);
 };
 
 class DisplayBasis {
