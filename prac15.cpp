@@ -26,7 +26,9 @@ GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
 glm::vec3 bgColor = { 0.95f, 0.95f, 0.95f };
 Cube* cube;
+Pyramid* pyramid;
 DisplayBasis* d_basis;
+bool displayCube = true;
 
 GLfloat xRot = -30.0f, yRot = -30.0f, dxRot = 0.0f, dyRot = 0.0f; // 월드 회전각
 
@@ -52,6 +54,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	// 좌표축 디스플레이 초기화
 	cube = new Cube();
 	d_basis = new DisplayBasis();
+	pyramid = new Pyramid();
 
 	// 컬링 관련 설정
 	glEnable(GL_DEPTH_TEST);
@@ -66,6 +69,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glutTimerFunc(1000 / 60, Timer, 1);
 	glutMainLoop();
 	delete cube;
+	delete pyramid;
 	delete d_basis;
 }
 
@@ -77,7 +81,13 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glUseProgram(shaderProgramID);
 
 	d_basis->Render();
-	cube->Render();
+
+	if (displayCube) {
+		cube->Render();
+	}
+	else {
+		pyramid->Render();
+	}
 
 	glutSwapBuffers(); // 화면에 출력하기
 }
@@ -91,10 +101,17 @@ GLvoid Reshape(int w, int h) //--- 콜백 함수: 다시 그리기 콜백 함수
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	if ('1' <= key && key <= '6') {
-		cube->DisplayOnly(key - '1');
+		if (displayCube)
+			cube->DisplayOnly(key - '1');
+		else
+			pyramid->DisplayOnly(key - '1');
 		return;
 	}
 	switch (key) {
+	case 'a':
+		displayCube = !displayCube;
+		std::cout << (displayCube ? "Cube Displayed" : "Pyramid Displayed") << std::endl;
+		break;
 	case 'r':
 		xRot = -30;
 		yRot = -30;
@@ -102,6 +119,14 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		rotation = glm::rotate(rotation, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
 		rotation = glm::rotate(rotation, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(rotation));
+		break;
+	case 'c':
+		if (displayCube)
+			cube->DisplayRandom();
+		break;
+	case 't':
+		if (!displayCube)
+			pyramid->DisplayRandom();
 		break;
 	case 'q':
 		exit(0);
@@ -144,7 +169,7 @@ GLvoid SpecialKeyUp(int key, int x, int y)
 		break;
 	}
 }
-
+ 
 GLvoid Timer(int value)
 {
 	xRot += dxRot;

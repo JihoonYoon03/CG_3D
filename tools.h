@@ -63,7 +63,65 @@ public:
 	Cube(GLfloat size = 1.0f);
 	void Render();
 	void DisplayOnly(int index);
-	void FaceOnOff(int index);
+	void DisplayRandom();
+};
+
+class Pyramid {
+	ColoredVertex vertices[16] =
+	{
+		// 앞면 삼각
+		{ {  0.0f,  0.5f,  0.0f }, { 1.0f, 1.0f, 0.0f } },
+		{ {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f } },
+		{ { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f } },
+
+		// 왼쪽면 삼각
+		{ {  0.0f,  0.5f,  0.0f }, { 0.0f, 1.0f, 0.0f } },
+		{ { -0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
+		{ { -0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } },
+
+		// 오른쪽면 삼각
+		{ {  0.0f,  0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f } },
+		{ {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } },
+		{ {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f } },
+
+		// 뒷면 삼각
+		{ {  0.0f,  0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f } },
+		{ { -0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 0.0f } },
+		{ {  0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 0.0f } },
+
+		// 밑면 사각
+		{ { -0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f } },
+		{ { -0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 1.0f } },
+		{ {  0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 1.0f } },
+		{ {  0.5f, -0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f } }
+
+	};
+
+	GLuint indices[18] =
+	{
+		// 앞면
+		0, 1, 2,
+		// 왼쪽면
+		3, 4, 5,
+		// 오른쪽면
+		6, 7, 8,
+		// 뒷면
+		9, 10, 11,
+		// 밑면
+		12, 13, 14,
+		12, 14, 15
+	};
+
+	bool faceToggle[5] = { false };
+	int lastDisplayFace = -1;
+
+	GLuint VAO, VBO, EBO;
+
+public:
+	Pyramid(GLfloat size = 1.0f);
+	void Render();
+	void DisplayOnly(int index);
+	void DisplayRandom();
 };
 
 class DisplayBasis {
