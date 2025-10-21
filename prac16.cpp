@@ -166,9 +166,20 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		if (dyRot > -1.0f) dyRot = -1.0f;
 		else dyRot = 0.0f;
 		break;
-	case 'r':
+	case 's':
 		xRot = -30;
 		yRot = -30;
+		xTrans = 0.0f;
+		yTrans = 0.0f;
+		dx = 0.0f;
+		dy = 0.0f;
+		dxRot = 0.0f;
+		dyRot = 0.0f;
+		backfaceCull = true;
+		glEnable(GL_CULL_FACE);
+		wireframe = false;
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		displayCube = true;
 		break;
 	case 'q':
 		exit(0);
