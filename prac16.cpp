@@ -28,7 +28,7 @@ glm::vec3 bgColor = { 0.95f, 0.95f, 0.95f };
 Cube* cube;
 Pyramid* pyramid;
 DisplayBasis* d_basis;
-bool backfaceCull = true, displayCube = true;
+bool backfaceCull = true, wireframe = false, displayCube = true;
 
 GLfloat xRot = -30.0f, yRot = -30.0f, dxRot = 0.0f, dyRot = 0.0f; // 월드 회전각
 
@@ -124,6 +124,24 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			glDisable(GL_CULL_FACE);
 			backfaceCull = false;
 			std::cout << "Backface Culling Disabled" << std::endl;
+		}
+		break;
+	case 'w':
+		if (!wireframe) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			wireframe = true;
+
+			glDisable(GL_CULL_FACE);
+			backfaceCull = false;
+			std::cout << "Wireframe Mode Enabled" << std::endl;
+		}
+		else {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			wireframe = false;
+
+			glEnable(GL_CULL_FACE);
+			backfaceCull = true;
+			std::cout << "Wireframe Mode Disabled" << std::endl;
 		}
 		break;
 	case 'r':
