@@ -14,8 +14,6 @@
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
-GLvoid SpecialKey(int key, int x, int y);
-GLvoid SpecialKeyUp(int key, int x, int y);
 GLvoid Timer(int value);
 
 //--- 필요한 변수 선언
@@ -66,8 +64,6 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glutDisplayFunc(drawScene); //--- 출력 콜백 함수
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
-	glutSpecialFunc(SpecialKey);
-	glutSpecialUpFunc(SpecialKeyUp);
 	glutTimerFunc(1000 / 60, Timer, 1);
 	glutMainLoop();
 	delete cube;
@@ -144,48 +140,28 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			std::cout << "Wireframe Mode Disabled" << std::endl;
 		}
 		break;
+	case 'x':
+		if (dxRot < 1.0f) dxRot = 1.0f;
+		else dxRot = 0.0f;
+		break;
+	case 'X':
+		if (dxRot > -1.0f) dxRot = -1.0f;
+		else dxRot = 0.0f;
+		break;
+	case 'y':
+		if (dyRot < 1.0f) dyRot = 1.0f;
+		else dyRot = 0.0f;
+		break;
+	case 'Y':
+		if (dyRot > -1.0f) dyRot = -1.0f;
+		else dyRot = 0.0f;
+		break;
 	case 'r':
 		xRot = -30;
 		yRot = -30;
 		break;
 	case 'q':
 		exit(0);
-		break;
-	}
-}
-
-GLvoid SpecialKey(int key, int x, int y)
-{
-	switch (key) {
-	case GLUT_KEY_LEFT:
-		if (dyRot < 1.0f) dyRot += 1.0f;
-		break;
-	case GLUT_KEY_RIGHT:
-		if (dyRot > -1.0f) dyRot -= 1.0f;
-		break;
-	case GLUT_KEY_UP:
-		if (dxRot < 1.0f) dxRot += 1.0f;
-		break;
-	case GLUT_KEY_DOWN:
-		if (dxRot > -1.0f) dxRot -= 1.0f;
-		break;
-	}
-}
-
-GLvoid SpecialKeyUp(int key, int x, int y)
-{
-	switch (key) {
-	case GLUT_KEY_LEFT:
-		if (dyRot > 0.0f) dyRot -= 1.0f;
-		break;
-	case GLUT_KEY_RIGHT:
-		if (dyRot < 0.0f) dyRot += 1.0f;
-		break;
-	case GLUT_KEY_UP:
-		if (dxRot > 0.0f) dxRot -= 1.0f;
-		break;
-	case GLUT_KEY_DOWN:
-		if (dxRot < 0.0f) dxRot += 1.0f;
 		break;
 	}
 }
