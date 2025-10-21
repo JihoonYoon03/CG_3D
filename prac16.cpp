@@ -14,6 +14,8 @@
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
+GLvoid SpecialKey(int key, int x, int y);
+GLvoid SpecialKeyUp(int key, int x, int y);
 GLvoid Timer(int value);
 
 //--- 필요한 변수 선언
@@ -28,7 +30,7 @@ Pyramid* pyramid;
 DisplayBasis* d_basis;
 bool backfaceCull = true, wireframe = false, displayCube = true;
 
-GLfloat xRot = -30.0f, yRot = -30.0f, dxRot = 0.0f, dyRot = 0.0f; // 월드 회전각
+GLfloat xRot = -30.0f, yRot = -30.0f, xTrans = 0.0f, yTrans = 0.0f, dx = 0.0f, dy = 0.0f, dxRot = 0.0f, dyRot = 0.0f;
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -45,8 +47,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glewInit();
 
 	//--- 세이더 읽어와서 세이더 프로그램 만들기: 사용자 정의함수 호출
-	make_vertexShaders(vertexShader, "vertex.glsl"); //--- 버텍스 세이더 만들기
-	make_fragmentShaders(fragmentShader, "fragment.glsl"); //--- 프래그먼트 세이더 만들기
+	make_vertexShaders(vertexShader, "vertex_prac16.glsl"); //--- 버텍스 세이더 만들기
+	make_fragmentShaders(fragmentShader, "fragment_prac16.glsl"); //--- 프래그먼트 세이더 만들기
 	shaderProgramID = make_shaderProgram(vertexShader, fragmentShader);
 
 	// 좌표축 디스플레이 초기화
@@ -64,6 +66,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glutDisplayFunc(drawScene); //--- 출력 콜백 함수
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
+	glutSpecialFunc(SpecialKey);
+	glutSpecialUpFunc(SpecialKeyUp);
 	glutTimerFunc(1000 / 60, Timer, 1);
 	glutMainLoop();
 	delete cube;
@@ -78,12 +82,18 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
-	glm::mat4 view = glm::mat4(1.0f);
-	view = glm::rotate(view, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
-	view = glm::rotate(view, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+	glm::mat4 rotate = glm::mat4(1.0f);
+	glm::mat4 translate = glm::mat4(1.0f);
+	rotate = glm::rotate(rotate, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
+	rotate = glm::rotate(rotate, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
+	translate = glm::translate(translate, glm::vec3(xTrans, yTrans, 0.0f));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(rotate));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "translation"), 1, GL_FALSE, glm::value_ptr(translate));
 
+	glUniform1i(glGetUniformLocation(shaderProgramID, "useTranslation"), false);
 	d_basis->Render();
+
+	glUniform1i(glGetUniformLocation(shaderProgramID, "useTranslation"), true);
 
 	if (displayCube) {
 		cube->Render();
@@ -166,8 +176,46 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	}
 }
 
+GLvoid SpecialKey(int key, int x, int y)
+{
+	switch (key) {
+	case GLUT_KEY_LEFT:
+		if (dx > -1.0f) dx = -1.0f;
+		break;
+	case GLUT_KEY_RIGHT:
+		if (dx < 1.0f) dx = 1.0f;
+		break;
+	case GLUT_KEY_UP:
+		if (dy < 1.0f) dy = 1.0f;
+		break;
+	case GLUT_KEY_DOWN:
+		if (dy > -1.0f) dy = -1.0f;
+		break;
+	}
+}
+
+GLvoid SpecialKeyUp(int key, int x, int y)
+{
+	switch (key) {
+	case GLUT_KEY_LEFT:
+		if (dx == -1.0f) dx += 1.0f;
+		break;
+	case GLUT_KEY_RIGHT:
+		if (dx == 1.0f) dx -= 1.0f;
+		break;
+	case GLUT_KEY_UP:
+		if (dy == 1.0f) dy -= 1.0f;
+		break;
+	case GLUT_KEY_DOWN:
+		if (dy == -1.0f) dy += 1.0f;
+		break;
+	}
+}
+
 GLvoid Timer(int value)
 {
+	xTrans += dx * 0.01f;
+	yTrans += dy * 0.01f;
 	xRot += dxRot;
 	yRot += dyRot;
 	glutPostRedisplay();

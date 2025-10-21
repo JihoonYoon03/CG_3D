@@ -24,6 +24,12 @@
     <None Include="vertex.glsl">
       <Filter>소스 파일\Shaders</Filter>
     </None>
+    <None Include="fragment_prac16.glsl">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
+    <None Include="vertex_prac16.glsl">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
