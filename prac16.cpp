@@ -107,13 +107,6 @@ GLvoid Reshape(int w, int h) //--- 콜백 함수: 다시 그리기 콜백 함수
 
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
-	if ('1' <= key && key <= '6') {
-		if (displayCube)
-			cube->DisplayOnly(key - '1');
-		else
-			pyramid->DisplayOnly(key - '1');
-		return;
-	}
 	switch (key) {
 	case 'c':
 		displayCube = true;
@@ -122,22 +115,20 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		displayCube = false;
 		break;
 	case 'h':
-		if (backfaceCull) {
+		if (!backfaceCull) {
 			glEnable(GL_CULL_FACE);
 			backfaceCull = true;
+			std::cout << "Backface Culling Enabled" << std::endl;
 		}
 		else {
 			glDisable(GL_CULL_FACE);
 			backfaceCull = false;
+			std::cout << "Backface Culling Disabled" << std::endl;
 		}
 		break;
 	case 'r':
 		xRot = -30;
 		yRot = -30;
-		break;
-	case 't':
-		if (!displayCube)
-			pyramid->DisplayRandom();
 		break;
 	case 'q':
 		exit(0);
