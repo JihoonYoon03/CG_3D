@@ -28,7 +28,7 @@ glm::vec3 bgColor = { 0.95f, 0.95f, 0.95f };
 Cube* cube;
 Pyramid* pyramid;
 DisplayBasis* d_basis;
-bool displayCube = true;
+bool backfaceCull = true, displayCube = true;
 
 GLfloat xRot = -30.0f, yRot = -30.0f, dxRot = 0.0f, dyRot = 0.0f; // 월드 회전각
 
@@ -58,7 +58,9 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 
 	// 컬링 관련 설정
 	glEnable(GL_DEPTH_TEST);
-	glFrontFace(GL_CW);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
 
 	//--- 세이더 프로그램 만들기
 	glutDisplayFunc(drawScene); //--- 출력 콜백 함수
@@ -113,21 +115,25 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		return;
 	}
 	switch (key) {
-	case 'a':
-		displayCube = !displayCube;
-		std::cout << (displayCube ? "Cube Displayed" : "Pyramid Displayed") << std::endl;
+	case 'c':
+		displayCube = true;
+		break;
+	case 'p':
+		displayCube = false;
+		break;
+	case 'h':
+		if (backfaceCull) {
+			glEnable(GL_CULL_FACE);
+			backfaceCull = true;
+		}
+		else {
+			glDisable(GL_CULL_FACE);
+			backfaceCull = false;
+		}
 		break;
 	case 'r':
 		xRot = -30;
 		yRot = -30;
-		glm::mat4 rotation = glm::mat4(1.0f);
-		rotation = glm::rotate(rotation, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
-		rotation = glm::rotate(rotation, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(rotation));
-		break;
-	case 'c':
-		if (displayCube)
-			cube->DisplayRandom();
 		break;
 	case 't':
 		if (!displayCube)

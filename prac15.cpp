@@ -58,7 +58,9 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 
 	// 컬링 관련 설정
 	glEnable(GL_DEPTH_TEST);
-	glFrontFace(GL_CW);
+	/*glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);*/
 
 	//--- 세이더 프로그램 만들기
 	glutDisplayFunc(drawScene); //--- 출력 콜백 함수
