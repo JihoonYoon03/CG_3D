@@ -9,6 +9,7 @@
 #include <gl/glm/ext.hpp>
 #include <gl/glm/gtc/matrix_transform.hpp>
 #include "tools.h"
+#include "object.h"
 
 //--- 아래 5개 함수는 사용자 정의 함수 임
 GLvoid drawScene();

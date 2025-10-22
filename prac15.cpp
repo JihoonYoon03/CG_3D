@@ -9,6 +9,7 @@
 #include <gl/glm/ext.hpp>
 #include <gl/glm/gtc/matrix_transform.hpp>
 #include "tools.h"
+#include "object.h"
 
 //--- 아래 5개 함수는 사용자 정의 함수 임
 GLvoid drawScene();
@@ -82,10 +83,10 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
-	glm::mat4 view = glm::mat4(1.0f);
-	view = glm::rotate(view, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
-	view = glm::rotate(view, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+	glm::mat4 rotation = glm::mat4(1.0f);
+	rotation = glm::rotate(rotation, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
+	rotation = glm::rotate(rotation, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(rotation));
 
 	d_basis->Render();
 
@@ -122,10 +123,6 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'r':
 		xRot = -30;
 		yRot = -30;
-		glm::mat4 rotation = glm::mat4(1.0f);
-		rotation = glm::rotate(rotation, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
-		rotation = glm::rotate(rotation, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(rotation));
 		break;
 	case 'c':
 		if (displayCube)
