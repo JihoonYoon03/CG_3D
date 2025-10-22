@@ -10,7 +10,11 @@ out vec3 vertexColor;
 void main()
 {
 	if (useTranslation) {
-		gl_Position = rotation * modify * vec4(position - moveToOrigin, 1.0) + vec4(moveToOrigin, 0);
+		vec3 originPos = position + moveToOrigin;
+		vec4 modifiedPos = modify * vec4(originPos, 1.0);
+		vec3 restoredPos = modifiedPos.xyz - moveToOrigin;
+
+		gl_Position = rotation * vec4(restoredPos, 1);
 	}
 	else {
 		gl_Position = rotation * vec4(position, 1.0);

@@ -30,6 +30,8 @@ DisplayBasis* d_basis;
 bool backfaceCull = true, displayCube = true;
 
 GLfloat xRot = -30.0f, yRot = -30.0f, dxRot = 0.0f, dyRot = 0.0f;
+glm::vec3 faceRotAngle = { 0.0f, 0.0f, 0.0f };
+glm::vec3 faceRotDelta = { 0.0f, 0.0f, 0.0f };
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -80,8 +82,12 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glUseProgram(shaderProgramID);
 
 	glm::mat4 modify = glm::mat4(1.0f);
-	// modify = glm::translate(modify, glm::vec3(0.0f, 0.0f, 0.5f));
-	modify = glm::scale(modify, glm::vec3(0.5f, 0.5f, 0.5f));
+	glm::mat4 faceRot = glm::mat4(1.0f);
+	faceRot = glm::rotate(faceRot, glm::radians(faceRotAngle.x), glm::vec3(1.0f, 0.0f, 0.0f));
+	faceRot = glm::rotate(faceRot, glm::radians(faceRotAngle.y), glm::vec3(0.0f, 1.0f, 0.0f));
+	faceRot = glm::rotate(faceRot, glm::radians(faceRotAngle.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	modify = faceRot;
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "modify"), 1, GL_FALSE, glm::value_ptr(modify));
 
 	glm::mat4 rotate = glm::mat4(1.0f);
@@ -134,7 +140,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		else dyRot = 0.0f;
 		break;
 	case 't':
-		cube->modifyFace(0, true);
+		cube->modifyFace(2, true);
+		if (cube->isFaceModified(2)) {
+			faceRotDelta.z = 1.0f;
+		}
+		else {
+			faceRotDelta.z = 0.0f;
+		}
 		break;
 	case 'c':
 		xRot = -30;
@@ -155,6 +167,7 @@ GLvoid Timer(int value)
 {
 	xRot += dxRot;
 	yRot += dyRot;
+	faceRotAngle += faceRotDelta;
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, Timer, 1);
 }

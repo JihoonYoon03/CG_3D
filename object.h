@@ -49,11 +49,11 @@ class Cube {
 
 	glm::vec3 toOrigin[6] = {
 		glm::vec3(0.0f, 0.0f, 0.5f),
-		glm::vec3(-0.5f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, -0.5f),
 		glm::vec3(0.5f, 0.0f, 0.0f),
 		glm::vec3(0.0f, -0.5f, 0.0f),
-		glm::vec3(0.0f, 0.5f, 0.0f)
+		glm::vec3(-0.5f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.5f, 0.0f),
+		glm::vec3(0.0f, 0.0f, -0.5f)
 	};
 
 	bool faceToggle[6] = { false };
@@ -68,6 +68,7 @@ public:
 	void DisplayOnly(int index);
 	void DisplayRandom();
 	void modifyFace(int index, bool toggle = false);
+	bool isFaceModified(int index) { return faceModify[index]; }
 };
 
 class Pyramid {
@@ -128,4 +129,5 @@ public:
 	void DisplayOnly(int index);
 	void DisplayRandom();
 	void modifyFace(int index, bool toggle = false);
+	bool isFaceModified(int index) { return faceModify[index]; }
 };
