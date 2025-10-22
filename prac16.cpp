@@ -91,10 +91,10 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(rotate));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "translation"), 1, GL_FALSE, glm::value_ptr(translate));
 
-	glUniform1i(glGetUniformLocation(shaderProgramID, "useTranslation"), false);
+	glUniform1i(glGetUniformLocation(shaderProgramID, "useT"), false);
 	d_basis->Render();
 
-	glUniform1i(glGetUniformLocation(shaderProgramID, "useTranslation"), true);
+	glUniform1i(glGetUniformLocation(shaderProgramID, "useT"), true);
 
 	if (displayCube) {
 		cube->Render();

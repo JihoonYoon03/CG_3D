@@ -38,8 +38,10 @@ void Cube::Render() {
 					glUniform3f(offset, toOrigin[i].x, toOrigin[i].y, toOrigin[i].z);
 				}
 			}
-			else
-				glUniform1i(location, false);
+			else {
+				if (location != -1)
+					glUniform1i(location, false);
+			}
 		}
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(i * 6 * sizeof(GLuint)));
 	}
