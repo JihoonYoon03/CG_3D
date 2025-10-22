@@ -9,6 +9,7 @@
 #include <gl/glm/ext.hpp>
 #include <gl/glm/gtc/matrix_transform.hpp>
 #include "tools.h"
+#include "object.h"
 
 //--- 아래 5개 함수는 사용자 정의 함수 임
 GLvoid drawScene();
@@ -78,15 +79,17 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
+	glm::mat4 modify = glm::mat4(1.0f);
+	// modify = glm::translate(modify, glm::vec3(0.0f, 0.0f, 0.5f));
+	modify = glm::scale(modify, glm::vec3(0.5f, 0.5f, 0.5f));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "modify"), 1, GL_FALSE, glm::value_ptr(modify));
+
 	glm::mat4 rotate = glm::mat4(1.0f);
 	rotate = glm::rotate(rotate, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
 	rotate = glm::rotate(rotate, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(rotate));
 
-	glUniform1i(glGetUniformLocation(shaderProgramID, "useTranslation"), false);
 	d_basis->Render();
-
-	glUniform1i(glGetUniformLocation(shaderProgramID, "useTranslation"), true);
 
 	if (displayCube) {
 		cube->Render();
@@ -129,6 +132,9 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'Y':
 		if (dyRot > -1.0f) dyRot = -1.0f;
 		else dyRot = 0.0f;
+		break;
+	case 't':
+		cube->modifyFace(0, true);
 		break;
 	case 'c':
 		xRot = -30;
