@@ -32,6 +32,7 @@ bool backfaceCull = true, displayCube = true;
 GLfloat xRot = -30.0f, yRot = -30.0f, dxRot = 0.0f, dyRot = 0.0f;
 glm::vec3 faceRotAngle = { 0.0f, 0.0f, 0.0f };
 glm::vec3 faceRotDelta = { 0.0f, 0.0f, 0.0f };
+glm::vec3 faceRotCap = { 90.0f, 360.0f, 360.0f };
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -59,9 +60,6 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 
 	// 컬링 관련 설정
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glFrontFace(GL_CCW);
 
 	//--- 세이더 프로그램 만들기
 	glutDisplayFunc(drawScene); //--- 출력 콜백 함수
@@ -83,7 +81,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 
 	glm::mat4 modify = glm::mat4(1.0f);
 	glm::mat4 faceRot = glm::mat4(1.0f);
-	faceRot = glm::rotate(faceRot, glm::radians(faceRotAngle.x), glm::vec3(1.0f, 0.0f, 0.0f));
+	faceRot = glm::rotate(faceRot, glm::radians(std::min(faceRotAngle.x, faceRotCap.x)), glm::vec3(1.0f, 0.0f, 0.0f));
 	faceRot = glm::rotate(faceRot, glm::radians(faceRotAngle.y), glm::vec3(0.0f, 1.0f, 0.0f));
 	faceRot = glm::rotate(faceRot, glm::radians(faceRotAngle.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -121,14 +119,14 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		break;
 	case 'h':
 		if (!backfaceCull) {
-			glEnable(GL_CULL_FACE);
+			glEnable(GL_DEPTH_TEST);
 			backfaceCull = true;
-			std::cout << "Backface Culling Enabled" << std::endl;
+			std::cout << "Depth test Enabled" << std::endl;
 		}
 		else {
-			glDisable(GL_CULL_FACE);
+			glDisable(GL_DEPTH_TEST);
 			backfaceCull = false;
-			std::cout << "Backface Culling Disabled" << std::endl;
+			std::cout << "Depth test Disabled" << std::endl;
 		}
 		break;
 	case 'y':
@@ -140,12 +138,25 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		else dyRot = 0.0f;
 		break;
 	case 't':
+		for (int i = 0; i < 6; i++)
+			cube->modifyFace(i);
 		cube->modifyFace(2, true);
 		if (cube->isFaceModified(2)) {
 			faceRotDelta.z = 1.0f;
 		}
 		else {
 			faceRotDelta.z = 0.0f;
+		}
+		break;
+	case 'f':
+		for (int i = 0; i < 6; i++)
+			cube->modifyFace(i);
+		cube->modifyFace(0, true);
+		if (cube->isFaceModified(0)) {
+			faceRotDelta.x = 1.0f;
+		}
+		else {
+			faceRotDelta.x = 0.0f;
 		}
 		break;
 	case 'c':
@@ -168,6 +179,9 @@ GLvoid Timer(int value)
 	xRot += dxRot;
 	yRot += dyRot;
 	faceRotAngle += faceRotDelta;
+	if (faceRotAngle.x > faceRotCap.x || faceRotAngle.x < 0) faceRotDelta.x *= -1;
+	if (faceRotAngle.y > faceRotCap.y || faceRotAngle.x < 0) faceRotDelta.y *= -1;
+	if (faceRotAngle.z > faceRotCap.z || faceRotAngle.x < 0) faceRotDelta.z *= -1;
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, Timer, 1);
 }

@@ -12,9 +12,9 @@ void main()
 	if (useTranslation) {
 		vec3 originPos = position + moveToOrigin;
 		vec4 modifiedPos = modify * vec4(originPos, 1.0);
-		vec3 restoredPos = modifiedPos.xyz - moveToOrigin;
+		vec3 finalPos = modifiedPos.xyz - moveToOrigin;
 
-		gl_Position = rotation * vec4(restoredPos, 1);
+		gl_Position = rotation * vec4(finalPos, 1);
 	}
 	else {
 		gl_Position = rotation * vec4(position, 1.0);

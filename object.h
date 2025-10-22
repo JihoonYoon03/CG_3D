@@ -48,7 +48,7 @@ class Cube {
 	};
 
 	glm::vec3 toOrigin[6] = {
-		glm::vec3(0.0f, 0.0f, 0.5f),
+		glm::vec3(0.0f, -0.5f, 0.5f),
 		glm::vec3(0.5f, 0.0f, 0.0f),
 		glm::vec3(0.0f, -0.5f, 0.0f),
 		glm::vec3(-0.5f, 0.0f, 0.0f),
