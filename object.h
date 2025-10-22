@@ -47,8 +47,17 @@ class Cube {
 		5, 7, 6
 	};
 
+	glm::vec3 toOrigin[6] = {
+		glm::vec3(0.0f, 0.0f, 0.5f),
+		glm::vec3(-0.5f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, -0.5f),
+		glm::vec3(0.5f, 0.0f, 0.0f),
+		glm::vec3(0.0f, -0.5f, 0.0f),
+		glm::vec3(0.0f, 0.5f, 0.0f)
+	};
+
 	bool faceToggle[6] = { false };
-	bool faceTransform[6] = { false };
+	bool faceModify[6] = { false };
 	int lastDisplayFace = -1;
 
 	GLuint VAO, VBO, EBO;
@@ -58,6 +67,7 @@ public:
 	void Render();
 	void DisplayOnly(int index);
 	void DisplayRandom();
+	void modifyFace(int index, bool toggle = false);
 };
 
 class Pyramid {
@@ -107,7 +117,7 @@ class Pyramid {
 	};
 
 	bool faceToggle[5] = { false };
-	bool faceTransform[5] = { false };
+	bool faceModify[5] = { false };
 	int lastDisplayFace = -1;
 
 	GLuint VAO, VBO, EBO;
@@ -117,4 +127,5 @@ public:
 	void Render();
 	void DisplayOnly(int index);
 	void DisplayRandom();
+	void modifyFace(int index, bool toggle = false);
 };

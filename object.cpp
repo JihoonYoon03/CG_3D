@@ -23,6 +23,28 @@ Cube::Cube(GLfloat offset) {
 	glEnableVertexAttribArray(1);
 }
 
+void Cube::Render() {
+	glBindVertexArray(VAO);
+	for (int i = 0; i < 6; i++) {
+		if (faceToggle[i]) continue;
+
+		// 해당 면 특수 변환여부 확인
+		if (shaderProgramID) {
+			GLint location = glGetUniformLocation(shaderProgramID, "useTranslation");
+			GLint offset = glGetUniformLocation(shaderProgramID, "moveToOrigin");
+			if (faceModify[i]) {
+				if (location != -1) {
+					glUniform1i(location, true);
+					glUniform3f(offset, toOrigin[i].x, toOrigin[i].y, toOrigin[i].z);
+				}
+			}
+			else
+				glUniform1i(location, false);
+		}
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(i * 6 * sizeof(GLuint)));
+	}
+}
+
 void Cube::DisplayOnly(int index) {
 	if (index < 0 || index >= 6) return;
 	if (lastDisplayFace == index) {
@@ -55,24 +77,12 @@ void Cube::DisplayRandom() {
 	} while (cnt < 2);
 }
 
-void Cube::Render() {
-	glBindVertexArray(VAO);
-	for (int i = 0; i < 6; i++) {
-		if (faceToggle[i]) continue;
-
-		// 해당 면 특수 변환여부 확인
-		if (shaderProgramID) {
-			GLint location = glGetUniformLocation(shaderProgramID, "useTranslation");
-			if (faceTransform[i]) {
-				if (location != -1) {
-					glUniform1i(location, true);
-				}
-			}
-			else
-				glUniform1i(location, false);
-		}
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(i * 6 * sizeof(GLuint)));
-	}
+void Cube::modifyFace(int index, bool toggle) {
+	if (index < 0 || index >= 6) return;
+	if (toggle)
+		faceModify[index] = !faceModify[index];
+	else
+		faceModify[index] = false;
 }
 
 Pyramid::Pyramid(GLfloat offset) {
@@ -95,6 +105,31 @@ Pyramid::Pyramid(GLfloat offset) {
 
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)sizeof(glm::vec3));
 	glEnableVertexAttribArray(1);
+}
+
+void Pyramid::Render() {
+	glBindVertexArray(VAO);
+	for (int i = 0; i < 5; i++) {
+		if (faceToggle[i]) continue;
+
+		// 해당 면 특수 변환여부 확인
+		if (shaderProgramID) {
+			GLint location = glGetUniformLocation(shaderProgramID, "useTranslation");
+			if (faceModify[i]) {
+				if (location != -1) {
+					glUniform1i(location, true);
+				}
+			}
+			else
+				glUniform1i(location, false);
+		}
+		if (i < 4) {
+			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)(i * 3 * sizeof(GLuint)));
+		}
+		else {
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(i * 3 * sizeof(GLuint)));
+		}
+	}
 }
 
 void Pyramid::DisplayOnly(int index) {
@@ -121,27 +156,10 @@ void Pyramid::DisplayRandom() {
 	faceToggle[rand() % 4] = false;
 }
 
-void Pyramid::Render() {
-	glBindVertexArray(VAO);
-	for (int i = 0; i < 5; i++) {
-		if (faceToggle[i]) continue;
-
-		// 해당 면 특수 변환여부 확인
-		if (shaderProgramID) {
-			GLint location = glGetUniformLocation(shaderProgramID, "useTranslation");
-			if (faceTransform[i]) {
-				if (location != -1) {
-					glUniform1i(location, true);
-				}
-			}
-			else
-				glUniform1i(location, false);
-		}
-		if (i < 4) {
-			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)(i * 3 * sizeof(GLuint)));
-		}
-		else {
-			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(i * 3 * sizeof(GLuint)));
-		}
-	}
+void Pyramid::modifyFace(int index, bool toggle) {
+	if (index < 0 || index >= 5) return;
+	if (toggle)
+		faceModify[index] = !faceModify[index];
+	else
+		faceModify[index] = false;
 }
