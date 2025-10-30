@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <stdio.h>	
+#include <string>
 #include <gl/glew.h>
 #include <gl/freeglut.h>
 #include <gl/freeglut_ext.h>
@@ -27,12 +28,10 @@ glm::vec3 bgColor = { 0.95f, 0.95f, 0.95f };
 Cube* cube;
 Pyramid* pyramid;
 DisplayBasis* d_basis;
-bool backfaceCull = true, displayCube = true;
+bool depthTest = true, displayCube = true, animate[6] = { false };
 
 GLfloat xRot = -30.0f, yRot = -30.0f, dxRot = 0.0f, dyRot = 0.0f;
-glm::vec3 faceRotAngle = { 0.0f, 0.0f, 0.0f };
-glm::vec3 faceRotDelta = { 0.0f, 0.0f, 0.0f };
-glm::vec3 faceRotCap = { 90.0f, 360.0f, 360.0f };
+GLfloat animateOffset[6] = { 0.0f }, deltaOffset[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -79,19 +78,28 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
-	glm::mat4 modify = glm::mat4(1.0f);
-	glm::mat4 faceRot = glm::mat4(1.0f);
-	faceRot = glm::rotate(faceRot, glm::radians(std::min(faceRotAngle.x, faceRotCap.x)), glm::vec3(1.0f, 0.0f, 0.0f));
-	faceRot = glm::rotate(faceRot, glm::radians(faceRotAngle.y), glm::vec3(0.0f, 1.0f, 0.0f));
-	faceRot = glm::rotate(faceRot, glm::radians(faceRotAngle.z), glm::vec3(0.0f, 0.0f, 1.0f));
+	for (int i = 0; i < 6; i++) {
 
-	modify = faceRot;
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "modify"), 1, GL_FALSE, glm::value_ptr(modify));
+		std::string matName = "faceModify[" + std::to_string(i) + "]";
+		GLuint matLoc = glGetUniformLocation(shaderProgramID, matName.c_str());
+		glm::mat4 modify = glm::mat4(1.0f);
 
-	glm::mat4 rotate = glm::mat4(1.0f);
-	rotate = glm::rotate(rotate, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
-	rotate = glm::rotate(rotate, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(rotate));
+		switch (i) {
+		case 0:
+			modify = glm::rotate(modify, glm::radians(animateOffset[i]), glm::vec3(1.0f, 0.0f, 0.0f));
+			break;
+		case 2:
+			modify = glm::rotate(modify, glm::radians(animateOffset[i]), glm::vec3(0.0f, 1.0f, 0.0f));
+			break;
+		}
+
+		glUniformMatrix4fv(matLoc, 1, GL_FALSE, glm::value_ptr(modify));
+	}
+
+	glm::mat4 worldRotate = glm::mat4(1.0f);
+	worldRotate = glm::rotate(worldRotate, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
+	worldRotate = glm::rotate(worldRotate, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(worldRotate));
 
 	d_basis->Render();
 
@@ -118,14 +126,14 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		displayCube = !displayCube;
 		break;
 	case 'h':
-		if (!backfaceCull) {
+		if (!depthTest) {
 			glEnable(GL_DEPTH_TEST);
-			backfaceCull = true;
+			depthTest = true;
 			std::cout << "Depth test Enabled" << std::endl;
 		}
 		else {
 			glDisable(GL_DEPTH_TEST);
-			backfaceCull = false;
+			depthTest = false;
 			std::cout << "Depth test Disabled" << std::endl;
 		}
 		break;
@@ -137,35 +145,19 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		if (dyRot > -1.0f) dyRot = -1.0f;
 		else dyRot = 0.0f;
 		break;
-	case 't':
-		for (int i = 0; i < 6; i++)
-			cube->modifyFace(i);
-		cube->modifyFace(2, true);
-		if (cube->isFaceModified(2)) {
-			faceRotDelta.z = 1.0f;
-		}
-		else {
-			faceRotDelta.z = 0.0f;
-		}
-		break;
 	case 'f':
-		for (int i = 0; i < 6; i++)
-			cube->modifyFace(i);
-		cube->modifyFace(0, true);
-		if (cube->isFaceModified(0)) {
-			faceRotDelta.x = 1.0f;
-		}
-		else {
-			faceRotDelta.x = 0.0f;
-		}
+		animate[0] = !animate[0];
+		break;
+	case 't':
+		animate[2] = !animate[2];
 		break;
 	case 'c':
 		xRot = -30;
 		yRot = -30;
 		dxRot = 0.0f;
 		dyRot = 0.0f;
-		backfaceCull = true;
-		glEnable(GL_CULL_FACE);
+		depthTest = true;
+		glEnable(GL_DEPTH_TEST);
 		displayCube = true;
 		break;
 	case 'q':
@@ -178,10 +170,21 @@ GLvoid Timer(int value)
 {
 	xRot += dxRot;
 	yRot += dyRot;
-	faceRotAngle += faceRotDelta;
-	if (faceRotAngle.x > faceRotCap.x || faceRotAngle.x < 0) faceRotDelta.x *= -1;
-	if (faceRotAngle.y > faceRotCap.y || faceRotAngle.x < 0) faceRotDelta.y *= -1;
-	if (faceRotAngle.z > faceRotCap.z || faceRotAngle.x < 0) faceRotDelta.z *= -1;
+	for (int i = 0; i < 6; i++) {
+		if (!animate[i]) continue;
+		animateOffset[i] += deltaOffset[i];
+
+		switch (i) {
+		case 0:
+			if (animateOffset[i] >= 90.0f || animateOffset[i] <= 0.0f)
+				deltaOffset[i] = -deltaOffset[i];
+			break;
+		case 2:
+			if (animateOffset[i] >= 360.0f)
+				animateOffset[i] = 0.0f;
+			break;
+		}
+	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, Timer, 1);
 }

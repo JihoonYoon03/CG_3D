@@ -28,20 +28,12 @@ void Cube::Render() {
 	for (int i = 0; i < 6; i++) {
 		if (faceToggle[i]) continue;
 
-		// 해당 면 특수 변환여부 확인
 		if (shaderProgramID) {
-			GLint location = glGetUniformLocation(shaderProgramID, "useTranslation");
-			GLint offset = glGetUniformLocation(shaderProgramID, "moveToOrigin");
-			if (faceModify[i]) {
-				if (location != -1) {
-					glUniform1i(location, true);
-					glUniform3f(offset, toOrigin[i].x, toOrigin[i].y, toOrigin[i].z);
-				}
-			}
-			else {
-				if (location != -1)
-					glUniform1i(location, false);
-			}
+			GLuint ptToOrigin = glGetUniformLocation(shaderProgramID, "moveToOrigin");
+			GLuint ptID = glGetUniformLocation(shaderProgramID, "faceID");
+
+			glUniform3f(ptToOrigin, toOrigin[i].x, toOrigin[i].y, toOrigin[i].z);	
+			glUniform1i(ptID, i);
 		}
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(i * 6 * sizeof(GLuint)));
 	}
@@ -79,13 +71,6 @@ void Cube::DisplayRandom() {
 	} while (cnt < 2);
 }
 
-void Cube::modifyFace(int index, bool toggle) {
-	if (index < 0 || index >= 6) return;
-	if (toggle)
-		faceModify[index] = !faceModify[index];
-	else
-		faceModify[index] = false;
-}
 
 Pyramid::Pyramid(GLfloat offset) {
 	for (int i = 0; i < sizeof(vertices) / sizeof(ColoredVertex); i++) {

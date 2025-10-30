@@ -57,7 +57,6 @@ class Cube {
 	};
 
 	bool faceToggle[6] = { false };
-	bool faceModify[6] = { false };
 	int lastDisplayFace = -1;
 
 	GLuint VAO, VBO, EBO;
@@ -67,8 +66,6 @@ public:
 	void Render();
 	void DisplayOnly(int index);
 	void DisplayRandom();
-	void modifyFace(int index, bool toggle = false);
-	bool isFaceModified(int index) { return faceModify[index]; }
 };
 
 class Pyramid {
