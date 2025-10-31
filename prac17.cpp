@@ -28,10 +28,10 @@ glm::vec3 bgColor = { 0.05f, 0.05f, 0.05f };
 Cube* cube;
 Pyramid* pyramid;
 DisplayBasis* d_basis;
-bool depthTest = true, displayCube = true, animate[6] = { false };
+bool depthTest = true, displayCube = true, animate[11] = { false };
 
 GLfloat xRot = -30.0f, yRot = -30.0f, dxRot = 0.0f, dyRot = 0.0f;
-GLfloat animateOffset[6] = { 0.0f }, deltaOffset[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
+GLfloat animateOffset[11] = { 0.0f }, deltaOffset[11] = { 0.0f };
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -52,10 +52,12 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	make_fragmentShaders(fragmentShader, "fragment_prac17.glsl"); //--- 프래그먼트 세이더 만들기
 	shaderProgramID = make_shaderProgram(vertexShader, fragmentShader);
 
-	// 좌표축 디스플레이 초기화
+	// 데이터 초기화
 	cube = new Cube();
 	d_basis = new DisplayBasis();
 	pyramid = new Pyramid();
+	for (int i = 0; i < 11; i++)
+		deltaOffset[i] = 1.0f;
 
 	// 컬링 관련 설정
 	glEnable(GL_DEPTH_TEST);
@@ -78,7 +80,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < 11; i++) {
 
 		std::string matName = "faceModify[" + std::to_string(i) + "]";
 		GLuint matLoc = glGetUniformLocation(shaderProgramID, matName.c_str());
@@ -96,6 +98,12 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 			break;
 		case 5:
 			modify = glm::scale(modify, glm::vec3(1.0f - animateOffset[i] / 100.0f, 1.0f - animateOffset[i] / 100.0f, 1.0f));
+			break;
+		case 6:
+			modify = glm::rotate(modify, glm::radians(-animateOffset[i]), glm::vec3(1.0f, 0.0f, 0.0f));
+			break;
+		default:
+			break;
 		}
 
 		glUniformMatrix4fv(matLoc, 1, GL_FALSE, glm::value_ptr(modify));
@@ -169,6 +177,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'b':
 		animate[5] = !animate[5];
 		break;
+	case 'o':
+		for (int i = 6; i < 10; i++)
+			animate[i] = !animate[i];
+		break;
+	case 'r':
+		break;
 	case 'c':
 		xRot = -30;
 		yRot = -30;
@@ -188,7 +202,7 @@ GLvoid Timer(int value)
 {
 	xRot += dxRot;
 	yRot += dyRot;
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < 11; i++) {
 		if (!animate[i]) continue;
 		animateOffset[i] += deltaOffset[i];
 
@@ -204,7 +218,16 @@ GLvoid Timer(int value)
 		case 5:
 			if (animateOffset[i] > 100.0f || animateOffset[i] < 0.0f)
 				deltaOffset[i] = -deltaOffset[i];
+			break;
+		case 6:
+			if (animateOffset[i] > 253.43f || animateOffset[i] < 0.0f)
+				deltaOffset[i] = -deltaOffset[i];
+			break;
+		default:
+			break;
 		}
+
+		if (i == 7) std::cout << animateOffset[i] << std::endl;
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, Timer, 1);

@@ -99,23 +99,17 @@ void Pyramid::Render() {
 	for (int i = 0; i < 5; i++) {
 		if (faceToggle[i]) continue;
 
-		// 해당 면 특수 변환여부 확인
 		if (shaderProgramID) {
-			GLint location = glGetUniformLocation(shaderProgramID, "useTranslation");
-			if (faceModify[i]) {
-				if (location != -1) {
-					glUniform1i(location, true);
-				}
-			}
-			else
-				glUniform1i(location, false);
+			GLuint ptToOrigin = glGetUniformLocation(shaderProgramID, "moveToOrigin");
+			GLuint ptID = glGetUniformLocation(shaderProgramID, "faceID");
+
+			glUniform3f(ptToOrigin, toOrigin[i].x, toOrigin[i].y, toOrigin[i].z);
+			glUniform1i(ptID, i + 6);
 		}
-		if (i < 4) {
+		if (i < 4)
 			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)(i * 3 * sizeof(GLuint)));
-		}
-		else {
-			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(i * 3 * sizeof(GLuint)));
-		}
+		else
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(12 * sizeof(GLuint)));
 	}
 }
 
@@ -141,12 +135,4 @@ void Pyramid::DisplayRandom() {
 		faceToggle[i] = true;
 	}
 	faceToggle[rand() % 4] = false;
-}
-
-void Pyramid::modifyFace(int index, bool toggle) {
-	if (index < 0 || index >= 5) return;
-	if (toggle)
-		faceModify[index] = !faceModify[index];
-	else
-		faceModify[index] = false;
 }

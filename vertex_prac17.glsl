@@ -3,7 +3,7 @@
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 color;
 
-uniform mat4 rotation, faceModify[6];	// rotation - 월드 회전
+uniform mat4 rotation, faceModify[11];	// rotation - 월드 회전
 uniform vec3 moveToOrigin;
 uniform int faceID;
 uniform bool isBasis;
