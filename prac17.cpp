@@ -30,7 +30,7 @@ Pyramid* pyramid;
 DisplayBasis* d_basis;
 bool depthTest = true, displayCube = true, animate[11] = { false };
 
-GLfloat xRot = -30.0f, yRot = -30.0f, dxRot = 0.0f, dyRot = 0.0f;
+GLfloat xRot = 30.0f, yRot = 30.0f, dxRot = 0.0f, dyRot = 0.0f;
 GLfloat animateOffset[11] = { 0.0f }, deltaOffset[11] = { 0.0f };
 
 //--- 메인 함수
@@ -80,6 +80,13 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
+	// 투영 행렬과 뷰 행렬 설정
+	glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
+	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+
 	for (int i = 0; i < 11; i++) {
 
 		std::string matName = "faceModify[" + std::to_string(i) + "]";
@@ -88,7 +95,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 
 		switch (i) {
 		case 0:
-			modify = glm::rotate(modify, glm::radians(animateOffset[i]), glm::vec3(1.0f, 0.0f, 0.0f));
+			modify = glm::rotate(modify, glm::radians(-animateOffset[i]), glm::vec3(1.0f, 0.0f, 0.0f));
 			break;
 		case 1: case 3:
 			modify = glm::rotate(modify, glm::radians(animateOffset[i]), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -100,6 +107,15 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 			modify = glm::scale(modify, glm::vec3(1.0f - animateOffset[i] / 100.0f, 1.0f - animateOffset[i] / 100.0f, 1.0f));
 			break;
 		case 6:
+			modify = glm::rotate(modify, glm::radians(animateOffset[i]), glm::vec3(1.0f, 0.0f, 0.0f));
+			break;
+		case 7:
+			modify = glm::rotate(modify, glm::radians(animateOffset[i]), glm::vec3(0.0f, 0.0f, 1.0f));
+			break;
+		case 8:
+			modify = glm::rotate(modify, glm::radians(-animateOffset[i]), glm::vec3(0.0f, 0.0f, 1.0f));
+			break;
+		case 9:
 			modify = glm::rotate(modify, glm::radians(-animateOffset[i]), glm::vec3(1.0f, 0.0f, 0.0f));
 			break;
 		default:
@@ -110,8 +126,8 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	}
 
 	glm::mat4 basisRotate = glm::mat4(1.0f);
-	basisRotate = glm::rotate(basisRotate, glm::radians(-30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	basisRotate = glm::rotate(basisRotate, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	basisRotate = glm::rotate(basisRotate, glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	basisRotate = glm::rotate(basisRotate, glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(basisRotate));
 	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), true);
 	d_basis->Render();
@@ -136,6 +152,8 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 GLvoid Reshape(int w, int h) //--- 콜백 함수: 다시 그리기 콜백 함수
 {
 	glViewport(0, 0, w, h);
+	winWidth = w;
+	winHeight = h;
 }
 
 GLvoid Keyboard(unsigned char key, int x, int y)
@@ -219,15 +237,11 @@ GLvoid Timer(int value)
 			if (animateOffset[i] > 100.0f || animateOffset[i] < 0.0f)
 				deltaOffset[i] = -deltaOffset[i];
 			break;
-		case 6:
-			if (animateOffset[i] > 253.43f || animateOffset[i] < 0.0f)
+		case 6: case 7: case 8: case 9:
+			if (animateOffset[i] > 235.00f || animateOffset[i] < 0.0f)
 				deltaOffset[i] = -deltaOffset[i];
 			break;
-		default:
-			break;
 		}
-
-		if (i == 7) std::cout << animateOffset[i] << std::endl;
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, Timer, 1);
