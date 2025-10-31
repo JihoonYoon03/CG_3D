@@ -1,4 +1,3 @@
-//--- 필요한 헤더파일 선언
 #include <iostream>
 #include <stdlib.h>
 #include <stdio.h>	
@@ -25,30 +24,27 @@ glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 {
-	//--- 윈도우 생성하기
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(winWidth, winHeight);
 	glutCreateWindow("Example1");
 
-	//--- GLEW 초기화하기
 	glewExperimental = GL_TRUE;
 	glewInit();
 
-	//--- 세이더 읽어와서 세이더 프로그램 만들기: 사용자 정의함수 호출
-	make_vertexShaders(vertexShader, "vertex.glsl"); //--- 버텍스 세이더 만들기
-	make_fragmentShaders(fragmentShader, "fragment.glsl"); //--- 프래그먼트 세이더 만들기
+	make_vertexShaders(vertexShader, "vertex.glsl");
+	make_fragmentShaders(fragmentShader, "fragment.glsl");
 	shaderProgramID = make_shaderProgram(vertexShader, fragmentShader);
 
-	//--- 세이더 프로그램 만들기
-	glutDisplayFunc(drawScene); //--- 출력 콜백 함수
+	// 데이터 초기화
+
+	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutMainLoop();
 }
 
-//--- 출력 콜백 함수
-GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
+GLvoid drawScene()
 {
 	glClearColor(bgColor.x, bgColor.y, bgColor.z, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -57,11 +53,10 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glPointSize(10.0f);
 	glDrawArrays(GL_POINTS, 0, 1);
 
-	glutSwapBuffers(); // 화면에 출력하기
+	glutSwapBuffers();
 }
 
-//--- 다시그리기 콜백 함수
-GLvoid Reshape(int w, int h) //--- 콜백 함수: 다시 그리기 콜백 함수
+GLvoid Reshape(int w, int h)
 {
 	glViewport(0, 0, w, h);
 	winWidth = w;

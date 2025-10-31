@@ -149,7 +149,9 @@
     <ClCompile Include="prac17.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="prac18.cpp" />
+    <ClCompile Include="prac18.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="tools.cpp" />
   </ItemGroup>
   <ItemGroup>

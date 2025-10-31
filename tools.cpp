@@ -109,83 +109,110 @@ bool RectCollider(const glm::vec3& p1, const glm::vec3& p2, GLfloat xGL, GLfloat
 	else return false;
 }
 
-char* filetobuf(const char* file)
-{
-	FILE* fptr;
-	long length;
-	char* buf;
-	fopen_s(&fptr, file, "rb");		// Open file for reading
-	if (!fptr)						// Return NULL on failure
-		return NULL;
-	fseek(fptr, 0, SEEK_END);		// Seek to the end of the file
-	length = ftell(fptr);			// Find out how many bytes into the file we are
-	buf = (char*)malloc(length + 1); // Allocate a buffer for the entire length of the file and a null terminator
-	fseek(fptr, 0, SEEK_SET);		// Go back to the beginning of the file
-	fread(buf, length, 1, fptr);	// Read the contents of the file in to the buffer
-	fclose(fptr);					// Close the file
-	buf[length] = 0;				// Null terminator
-	return buf;						// Return the buffer
+std::string read_file(const std::string& filename) {
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		std::cerr << "Error: Could not open file " << filename << std::endl;
+		return "";
+	}
+
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	return buffer.str();
 }
 
-void make_vertexShaders(GLuint& vertexShader, const std::string& shaderName)
-{
-	GLchar* vertexSource;
-	//--- 버텍스 세이더 읽어 저장하고 컴파일 하기
-	//--- filetobuf: 사용자정의 함수로 텍스트를 읽어서 문자열에 저장하는 함수
-	vertexSource = filetobuf(shaderName.data());
+void make_vertexShaders(GLuint& vertexShader, const std::string& shaderName) {
+	std::string vertexSource = read_file(shaderName);
+	if (vertexSource.empty()) {
+		std::cerr << "ERROR: Failed to read vertex shader file" << std::endl;
+		return;
+	}
+
+	const char* sourcePtr = vertexSource.c_str();
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexSource, NULL);
+	glShaderSource(vertexShader, 1, &sourcePtr, nullptr);
 	glCompileShader(vertexShader);
+
 	GLint result;
-	GLchar errorLog[512];
 	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &result);
-	if (!result)
-	{
-		glGetShaderInfoLog(vertexShader, 512, NULL, errorLog);
-		std::cerr << "ERROR: vertex shader 컴파일 실패\n" << errorLog << std::endl;
-		return;
-	}
-}
-
-void make_fragmentShaders(GLuint& fragmentShader, const std::string& shaderName)
-{
-	GLchar* fragmentSource;
-	//--- 프래그먼트 세이더 읽어 저장하고 컴파일하기
-	fragmentSource = filetobuf(shaderName.data()); // 프래그세이더 읽어오기
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-	glCompileShader(fragmentShader);
-	GLint result;
-	GLchar errorLog[512];
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &result);
-	if (!result)
-	{
-		glGetShaderInfoLog(fragmentShader, 512, NULL, errorLog);
-		std::cerr << "ERROR: frag_shader 컴파일 실패\n" << errorLog << std::endl;
-		return;
-	}
-}
-
-GLuint make_shaderProgram(const GLuint& vertexShader, const GLuint& fragmentShader)
-{
-	GLint result;
-	GLchar* errorLog = NULL;
-	GLuint shaderID;
-	shaderID = glCreateProgram(); //--- 세이더 프로그램 만들기
-	glAttachShader(shaderID, vertexShader); //--- 세이더 프로그램에 버텍스 세이더 붙이기
-	glAttachShader(shaderID, fragmentShader); //--- 세이더 프로그램에 프래그먼트 세이더 붙이기
-	glLinkProgram(shaderID); //--- 세이더 프로그램 링크하기
-	glDeleteShader(vertexShader); //--- 세이더 객체를 세이더 프로그램에 링크했음으로, 세이더 객체 자체는 삭제 가능
-	glDeleteShader(fragmentShader);
-	glGetProgramiv(shaderID, GL_LINK_STATUS, &result); // ---세이더가 잘 연결되었는지 체크하기
 	if (!result) {
-		glGetProgramInfoLog(shaderID, 512, NULL, errorLog);
-		std::cerr << "ERROR: shader program 연결 실패\n" << errorLog << std::endl;
-		return false;
+		GLchar errorLog[512];
+		glGetShaderInfoLog(vertexShader, 512, nullptr, errorLog);
+		std::cerr << "ERROR: vertex shader 컴파일 실패\n" << errorLog << std::endl;
 	}
-	glUseProgram(shaderID); //--- 만들어진 세이더 프로그램 사용하기
-	//--- 여러 개의 세이더프로그램 만들 수 있고, 그 중 한개의 프로그램을 사용하려면
-	//--- glUseProgram 함수를 호출하여 사용 할 특정 프로그램을 지정한다.
-	//--- 사용하기 직전에 호출할 수 있다.
+}
+
+void make_fragmentShaders(GLuint& fragmentShader, const std::string& shaderName) {
+	std::string fragmentSource = read_file(shaderName);
+	if (fragmentSource.empty()) {
+		std::cerr << "ERROR: Failed to read fragment shader file" << std::endl;
+		return;
+	}
+
+	const char* sourcePtr = fragmentSource.c_str();
+	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &sourcePtr, nullptr);
+	glCompileShader(fragmentShader);
+
+	GLint result;
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &result);
+	if (!result) {
+		GLchar errorLog[512];
+		glGetShaderInfoLog(fragmentShader, 512, nullptr, errorLog);
+		std::cerr << "ERROR: fragment shader 컴파일 실패\n" << errorLog << std::endl;
+	}
+}
+
+GLuint make_shaderProgram(const GLuint& vertexShader, const GLuint& fragmentShader) {
+	GLuint shaderID = glCreateProgram();
+	glAttachShader(shaderID, vertexShader);
+	glAttachShader(shaderID, fragmentShader);
+	glLinkProgram(shaderID);
+
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+
+	GLint result;
+	glGetProgramiv(shaderID, GL_LINK_STATUS, &result);
+	if (!result) {
+		GLchar errorLog[512];
+		glGetProgramInfoLog(shaderID, 512, nullptr, errorLog);
+		std::cerr << "ERROR: shader program 연결 실패\n" << errorLog << std::endl;
+		return 0;
+	}
+
+	glUseProgram(shaderID);
 	return shaderID;
+}
+
+void read_obj_file(const std::string& filename, Model& model) {
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		std::cerr << "Error opening file: " << filename << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	std::string line;
+	while (std::getline(file, line)) {
+		if (line.empty()) continue;
+
+		std::istringstream iss(line);
+		std::string prefix;
+		iss >> prefix;
+
+		if (prefix == "v") {
+			glm::vec3 vertex;
+			iss >> vertex.x >> vertex.y >> vertex.z;
+			model.vertices.push_back(vertex);
+		}
+		else if (prefix == "f") {
+			glm::uvec3 face;
+			iss >> face.x >> face.y >> face.z;
+			// OBJ indices start at 1, convert to 0-based
+			face.x--; face.y--; face.z--;
+			model.faces.push_back(face);
+		}
+	}
+
+	file.close();
 }
