@@ -202,13 +202,18 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'r':
 		break;
 	case 'c':
-		xRot = -30;
-		yRot = -30;
+		xRot = 30;
+		yRot = 30;
 		dxRot = 0.0f;
 		dyRot = 0.0f;
 		depthTest = true;
 		glEnable(GL_DEPTH_TEST);
 		displayCube = true;
+		for (int i = 0; i < 11; i++) {
+			animate[i] = false;
+			animateOffset[i] = 0.0f;
+			deltaOffset[i] = 1.0f;
+		}
 		break;
 	case 'q':
 		exit(0);
