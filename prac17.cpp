@@ -28,7 +28,7 @@ glm::vec3 bgColor = { 0.05f, 0.05f, 0.05f };
 Cube* cube;
 Pyramid* pyramid;
 DisplayBasis* d_basis;
-bool depthTest = true, displayCube = true, animate[11] = { false };
+bool depthTest = true, displayCube = true, animate[11] = { false }, pyramAnimRelay = false;
 
 GLfloat xRot = 30.0f, yRot = 30.0f, dxRot = 0.0f, dyRot = 0.0f;
 GLfloat animateOffset[11] = { 0.0f }, deltaOffset[11] = { 0.0f };
@@ -196,10 +196,30 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		animate[5] = !animate[5];
 		break;
 	case 'o':
+		if (pyramAnimRelay) {
+			pyramAnimRelay = false;
+			for (int i = 6; i < 10; i++) {
+				animate[i] = false;
+				animateOffset[i] = 0.0f;
+				deltaOffset[i] = 1.0f;
+			}
+		}
 		for (int i = 6; i < 10; i++)
 			animate[i] = !animate[i];
+		std::cout << pyramAnimRelay << std::endl;
 		break;
 	case 'r':
+		for (int i = 6; i < 10; i++) {
+			animate[i] = false;
+			if (!pyramAnimRelay) {
+				animateOffset[i] = 0.0f;
+				deltaOffset[i] = 1.0f;
+			}
+		}
+		if (!pyramAnimRelay) {
+			animate[6] = true;
+			pyramAnimRelay = true;
+		}
 		break;
 	case 'c':
 		xRot = 30;
@@ -243,8 +263,13 @@ GLvoid Timer(int value)
 				deltaOffset[i] = -deltaOffset[i];
 			break;
 		case 6: case 7: case 8: case 9:
-			if (animateOffset[i] > 235.00f || animateOffset[i] < 0.0f)
-				deltaOffset[i] = -deltaOffset[i];
+			if (pyramAnimRelay) {
+
+			}
+			else {
+				if (animateOffset[i] > 235.00f || animateOffset[i] < 0.0f)
+					deltaOffset[i] = -deltaOffset[i];
+			}
 			break;
 		}
 	}
