@@ -24,7 +24,7 @@ GLuint shaderProgramID; //--- 세이더 프로그램 이름
 GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
-glm::vec3 bgColor = { 0.95f, 0.95f, 0.95f };
+glm::vec3 bgColor = { 0.05f, 0.05f, 0.05f };
 Cube* cube;
 Pyramid* pyramid;
 DisplayBasis* d_basis;
@@ -88,20 +88,31 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 		case 0:
 			modify = glm::rotate(modify, glm::radians(animateOffset[i]), glm::vec3(1.0f, 0.0f, 0.0f));
 			break;
+		case 1: case 3:
+			modify = glm::rotate(modify, glm::radians(animateOffset[i]), glm::vec3(1.0f, 0.0f, 0.0f));
+			break;
 		case 2:
 			modify = glm::rotate(modify, glm::radians(animateOffset[i]), glm::vec3(0.0f, 1.0f, 0.0f));
 			break;
+		case 5:
+			modify = glm::scale(modify, glm::vec3(1.0f - animateOffset[i] / 100.0f, 1.0f - animateOffset[i] / 100.0f, 1.0f));
 		}
 
 		glUniformMatrix4fv(matLoc, 1, GL_FALSE, glm::value_ptr(modify));
 	}
 
+	glm::mat4 basisRotate = glm::mat4(1.0f);
+	basisRotate = glm::rotate(basisRotate, glm::radians(-30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	basisRotate = glm::rotate(basisRotate, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(basisRotate));
+	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), true);
+	d_basis->Render();
+
+	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), false);
 	glm::mat4 worldRotate = glm::mat4(1.0f);
 	worldRotate = glm::rotate(worldRotate, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
 	worldRotate = glm::rotate(worldRotate, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(worldRotate));
-
-	d_basis->Render();
 
 	if (displayCube) {
 		cube->Render();
@@ -151,6 +162,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 't':
 		animate[2] = !animate[2];
 		break;
+	case 's':
+		animate[1] = !animate[1];
+		animate[3] = !animate[3];
+		break;
+	case 'b':
+		animate[5] = !animate[5];
+		break;
 	case 'c':
 		xRot = -30;
 		yRot = -30;
@@ -179,10 +197,13 @@ GLvoid Timer(int value)
 			if (animateOffset[i] >= 90.0f || animateOffset[i] <= 0.0f)
 				deltaOffset[i] = -deltaOffset[i];
 			break;
-		case 2:
+		case 1: case 2: case 3:
 			if (animateOffset[i] >= 360.0f)
 				animateOffset[i] = 0.0f;
 			break;
+		case 5:
+			if (animateOffset[i] > 100.0f || animateOffset[i] < 0.0f)
+				deltaOffset[i] = -deltaOffset[i];
 		}
 	}
 	glutPostRedisplay();
