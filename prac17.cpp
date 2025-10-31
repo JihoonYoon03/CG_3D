@@ -29,6 +29,7 @@ Cube* cube;
 Pyramid* pyramid;
 DisplayBasis* d_basis;
 bool depthTest = true, displayCube = true, animate[11] = { false }, pyramAnimRelay = false;
+int pyramAnimTurn = 6;
 
 GLfloat xRot = 30.0f, yRot = 30.0f, dxRot = 0.0f, dyRot = 0.0f;
 GLfloat animateOffset[11] = { 0.0f }, deltaOffset[11] = { 0.0f };
@@ -196,29 +197,37 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		animate[5] = !animate[5];
 		break;
 	case 'o':
-		if (pyramAnimRelay) {
-			pyramAnimRelay = false;
-			for (int i = 6; i < 10; i++) {
-				animate[i] = false;
-				animateOffset[i] = 0.0f;
+		for (int i = 6; i < 10; i++) {
+			animate[i] = pyramAnimRelay ? true : !animate[i];
+			if (pyramAnimRelay) {
 				deltaOffset[i] = 1.0f;
 			}
 		}
-		for (int i = 6; i < 10; i++)
-			animate[i] = !animate[i];
-		std::cout << pyramAnimRelay << std::endl;
+		if (pyramAnimRelay) {
+			pyramAnimRelay = false;
+		}
 		break;
 	case 'r':
 		for (int i = 6; i < 10; i++) {
+			if (i == pyramAnimTurn) continue;
+
 			animate[i] = false;
+
 			if (!pyramAnimRelay) {
 				animateOffset[i] = 0.0f;
 				deltaOffset[i] = 1.0f;
 			}
 		}
 		if (!pyramAnimRelay) {
-			animate[6] = true;
+			animate[pyramAnimTurn] = true;
+			if (animateOffset[pyramAnimTurn] >= 120.0f) {
+				animateOffset[pyramAnimTurn] = 120.0f;
+			}
 			pyramAnimRelay = true;
+		}
+		else {
+			animate[pyramAnimTurn] = false;
+			pyramAnimRelay = false;
 		}
 		break;
 	case 'c':
@@ -268,12 +277,19 @@ GLvoid Timer(int value)
 			break;
 		case 6: case 7: case 8: case 9:
 			if (pyramAnimRelay) {
-				/*if (animateOffset[i] > 235.00f)
+				if (pyramAnimTurn != i) break;
+
+				if (animateOffset[i] > 120.0f)
 					deltaOffset[i] = -deltaOffset[i];
 				else if (animateOffset[i] < 0.0f) {
 					deltaOffset[i] = -deltaOffset[i];
-					animateOffset[i] = glm::clamp(animateOffset[i], 0.0f, 235.0f);
-				}*/
+					animateOffset[i] = 0.0f;
+					animate[i] = false;
+					
+					if (++pyramAnimTurn == 10) pyramAnimTurn = 6;
+
+					animate[pyramAnimTurn] = true;
+				}
 			}
 			else {
 				if (animateOffset[i] > 235.00f || animateOffset[i] < 0.0f) {
