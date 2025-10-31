@@ -251,24 +251,35 @@ GLvoid Timer(int value)
 
 		switch (i) {
 		case 0:
-			if (animateOffset[i] >= 90.0f || animateOffset[i] <= 0.0f)
+			if (animateOffset[i] >= 90.0f || animateOffset[i] <= 0.0f) {
 				deltaOffset[i] = -deltaOffset[i];
+				animateOffset[i] = glm::clamp(animateOffset[i], 0.0f, 90.0f);
+			}
 			break;
 		case 1: case 2: case 3:
 			if (animateOffset[i] >= 360.0f)
 				animateOffset[i] = 0.0f;
 			break;
 		case 5:
-			if (animateOffset[i] > 100.0f || animateOffset[i] < 0.0f)
+			if (animateOffset[i] > 100.0f || animateOffset[i] < 0.0f) {
 				deltaOffset[i] = -deltaOffset[i];
+				animateOffset[i] = glm::clamp(animateOffset[i], 0.0f, 100.0f);
+			}
 			break;
 		case 6: case 7: case 8: case 9:
 			if (pyramAnimRelay) {
-
+				/*if (animateOffset[i] > 235.00f)
+					deltaOffset[i] = -deltaOffset[i];
+				else if (animateOffset[i] < 0.0f) {
+					deltaOffset[i] = -deltaOffset[i];
+					animateOffset[i] = glm::clamp(animateOffset[i], 0.0f, 235.0f);
+				}*/
 			}
 			else {
-				if (animateOffset[i] > 235.00f || animateOffset[i] < 0.0f)
+				if (animateOffset[i] > 235.00f || animateOffset[i] < 0.0f) {
 					deltaOffset[i] = -deltaOffset[i];
+					animateOffset[i] = glm::clamp(animateOffset[i], 0.0f, 235.0f);
+				}
 			}
 			break;
 		}
