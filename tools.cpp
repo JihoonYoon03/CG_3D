@@ -185,7 +185,7 @@ GLuint make_shaderProgram(const GLuint& vertexShader, const GLuint& fragmentShad
 	return shaderID;
 }
 
-void read_obj_file(const std::string& filename, Model& model) {
+Model::Model(const std::string& filename) {
 	std::ifstream file(filename);
 	if (!file.is_open()) {
 		std::cerr << "Error opening file: " << filename << std::endl;
@@ -195,7 +195,6 @@ void read_obj_file(const std::string& filename, Model& model) {
 	std::string line;
 	while (std::getline(file, line)) {
 		if (line.empty()) continue;
-
 		std::istringstream iss(line);
 		std::string prefix;
 		iss >> prefix;
@@ -203,16 +202,45 @@ void read_obj_file(const std::string& filename, Model& model) {
 		if (prefix == "v") {
 			glm::vec3 vertex;
 			iss >> vertex.x >> vertex.y >> vertex.z;
-			model.vertices.push_back(vertex);
+			vertices.push_back(vertex);
 		}
 		else if (prefix == "f") {
+			std::string v1, v2, v3;
+			iss >> v1 >> v2 >> v3;
+
+			// "정점/텍스처/노멀"에서 정점 인덱스만 추출
 			glm::uvec3 face;
-			iss >> face.x >> face.y >> face.z;
-			// OBJ indices start at 1, convert to 0-based
-			face.x--; face.y--; face.z--;
-			model.faces.push_back(face);
+			face.x = std::stoi(v1.substr(0, v1.find('/'))) - 1;
+			face.y = std::stoi(v2.substr(0, v2.find('/'))) - 1;
+			face.z = std::stoi(v3.substr(0, v3.find('/'))) - 1;
+
+			faces.push_back(face);
 		}
 	}
-
 	file.close();
+
+	std::cout << "Loaded " << vertices.size() << " vertices, "
+		<< faces.size() << " faces" << std::endl;  // 디버그 출력
+
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3),
+		vertices.data(), GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, faces.size() * sizeof(glm::uvec3),
+		faces.data(), GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+}
+
+void Model::Render() {
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, 0);
 }

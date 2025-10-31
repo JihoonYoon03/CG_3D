@@ -19,6 +19,7 @@ GLint winWidth = 600, winHeight = 600;
 GLuint shaderProgramID; //--- 세이더 프로그램 이름
 GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
+Model* test;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 
@@ -34,11 +35,14 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glewExperimental = GL_TRUE;
 	glewInit();
 
-	make_vertexShaders(vertexShader, "vertex.glsl");
-	make_fragmentShaders(fragmentShader, "fragment.glsl");
+	make_vertexShaders(vertexShader, "vertex_prac18.glsl");
+	make_fragmentShaders(fragmentShader, "fragment_prac18.glsl");
 	shaderProgramID = make_shaderProgram(vertexShader, fragmentShader);
 
+	glEnable(GL_DEPTH_TEST);
+
 	// 데이터 초기화
+	test = new Model("Models/test.obj");
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
@@ -53,6 +57,8 @@ GLvoid drawScene()
 
 	glPointSize(10.0f);
 	glDrawArrays(GL_POINTS, 0, 1);
+
+	test->Render();
 
 	glutSwapBuffers();
 }

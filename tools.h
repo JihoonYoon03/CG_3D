@@ -20,9 +20,14 @@ struct ColoredVertex {
 	glm::vec3 color;
 };
 
-struct Model {
+class Model {
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::uvec3> faces;
+
+	GLuint VAO, VBO, EBO;
+public:
+	Model(const std::string& filename);
+	void Render();
 };
 
 class DisplayBasis {
@@ -51,4 +56,3 @@ std::string read_file(const std::string& filename);
 void make_vertexShaders(GLuint& vertexShader, const std::string& shaderName);
 void make_fragmentShaders(GLuint& fragmentShader, const std::string& shaderName);
 GLuint make_shaderProgram(const GLuint& vertexShader, const GLuint& fragmentShader);
-void read_obj_file(const std::string& filename, Model& model);

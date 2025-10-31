@@ -36,18 +36,18 @@
     <None Include="vertex_prac17.glsl">
       <Filter>소스 파일\Shaders</Filter>
     </None>
+    <None Include="fragment_prac18.glsl">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
+    <None Include="vertex_prac18.glsl">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="tools.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="prac15.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="prac16.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="prac17.cpp">

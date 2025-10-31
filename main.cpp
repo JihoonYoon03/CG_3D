@@ -37,6 +37,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	make_fragmentShaders(fragmentShader, "fragment.glsl");
 	shaderProgramID = make_shaderProgram(vertexShader, fragmentShader);
 
+	glEnable(GL_DEPTH_TEST);
+
 	// 데이터 초기화
 
 	glutDisplayFunc(drawScene);
