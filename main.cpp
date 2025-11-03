@@ -25,7 +25,7 @@ Model* test;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 GLfloat viewX = 0.0f, viewY = 0.0f;
-bool cursorDisabled = false;
+bool cursorEnabled = false;
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -65,7 +65,7 @@ GLvoid drawScene()
 	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
 	view = glm::rotate(view, glm::radians(20.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	if (cursorDisabled)
+	if (cursorEnabled)
 	{
 		view = glm::rotate(view, glm::radians(viewX), glm::vec3(0.0f, 1.0f, 0.0f));
 		view = glm::rotate(view, glm::radians(viewY), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -93,7 +93,7 @@ GLvoid Reshape(int w, int h)
 
 GLvoid MouseMotion(int x, int y)
 {
-	if (cursorDisabled == false)
+	if (cursorEnabled == false)
 		return;
 
 	viewX += (x - winWidth / 2) * 0.2f;
@@ -110,12 +110,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
 	case 'm':
-		if (cursorDisabled) {
-			cursorDisabled = false;
+		if (cursorEnabled) {
+			cursorEnabled = false;
 			glutSetCursor(GLUT_CURSOR_INHERIT);
 		}
 		else {
-			cursorDisabled = true;
+			cursorEnabled = true;
 			glutSetCursor(GLUT_CURSOR_NONE);
 		}
 		break;
