@@ -15,6 +15,7 @@ GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
 GLvoid MouseMotion(int x, int y);
+GLvoid TimerFunc(int value);
 
 //--- 필요한 변수 선언
 GLint winWidth = 600, winHeight = 600;
@@ -27,7 +28,7 @@ Model* test;
 DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
-GLfloat viewX = 0.0f, viewY = 0.0f;
+GLfloat mouseRotX = 0.0f, mouseRotY = 0.0f, deltaSpinX = 0.0f, deltaSpinY = 0.0f, deltaOrbitY = 0.0f, deltaScaleFromSelf = 1.0f, deltaScaleFromOrigin = 1.0f;
 bool cursorEnabled = false;
 
 //--- 메인 함수
@@ -56,6 +57,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
 	glutPassiveMotionFunc(MouseMotion);
+	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
 }
 
@@ -71,18 +73,15 @@ GLvoid drawScene()
 	view = glm::rotate(view, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	if (cursorEnabled)
 	{
-		view = glm::rotate(view, glm::radians(viewX), glm::vec3(0.0f, 1.0f, 0.0f));
-		view = glm::rotate(view, glm::radians(viewY), glm::vec3(1.0f, 0.0f, 0.0f));
+		view = glm::rotate(view, glm::radians(30.0f + mouseRotX), glm::vec3(0.0f, 1.0f, 0.0f));
+		view = glm::rotate(view, glm::radians(-30.0f + mouseRotY), glm::vec3(1.0f, 0.0f, 0.0f));
 	}
-	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
-	model = glm::translate(model, glm::vec3(3.0f, 0.0f, 0.0f));
+	test->scaleModel({ 0.2, 0.2, 0.2 });
+	test->translateModel({ 3.0, 0.0, 0.0 });
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-	glPointSize(10.0f);
-	glDrawArrays(GL_POINTS, 0, 1);
 
 	glUniform1i(glGetUniformLocation(shaderProgramID, "use_color_set"), false);
 	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), true);
@@ -91,6 +90,7 @@ GLvoid drawScene()
 
 	glUniform1i(glGetUniformLocation(shaderProgramID, "use_color_set"), true);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "color_set"), 0.8f, 0.8f, 0.8f);
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(test->getModelMatrix()));
 	test->Render();
 
 	glutSwapBuffers();
@@ -108,11 +108,11 @@ GLvoid MouseMotion(int x, int y)
 	if (cursorEnabled == false)
 		return;
 
-	viewX += (x - winWidth / 2) * 0.2f;
-	viewY += (y - winHeight / 2) * 0.2f;
+	mouseRotX += (x - winWidth / 2) * 0.2f;
+	mouseRotY += (y - winHeight / 2) * 0.2f;
 
-	if (viewY > 89.0f) viewY = 89.0f;
-	if (viewY < -89.0f) viewY = -89.0f;
+	if (mouseRotY > 89.0f) mouseRotY = 89.0f;
+	if (mouseRotY < -89.0f) mouseRotY = -89.0f;
 
 	glutWarpPointer(winWidth / 2, winHeight / 2);
 	glutPostRedisplay();
@@ -121,6 +121,12 @@ GLvoid MouseMotion(int x, int y)
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
+	case 'x': case 'X':
+		if (deltaSpinX == 0.0f)
+			deltaSpinX = key = 'x' ? 0.5f : -0.5f;
+		else
+			deltaSpinX = 0.0f;
+		break;
 	case 'm':
 		if (cursorEnabled) {
 			cursorEnabled = false;
@@ -135,4 +141,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		exit(0);
 		break;
 	}
+}
+
+GLvoid TimerFunc(int value)
+{
+	deltaSpinX += deltaSpinX;
+	deltaSpinY += deltaSpinY;
+	deltaOrbitY += 0.2f;
+	glutPostRedisplay();
+	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }

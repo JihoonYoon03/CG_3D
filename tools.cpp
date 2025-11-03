@@ -55,6 +55,38 @@ Model::Model(const std::string& filename) {
 	glEnableVertexAttribArray(0);
 }
 
+void Model::scaleModel(const glm::vec3& scaleFactor) {
+	scale = scaleFactor;
+}
+
+void Model::rotateModel(GLfloat angle, const glm::vec3 axis) {
+	rotation = glm::vec4(angle, axis);
+}
+
+void Model::translateModel(const glm::vec3& delta) {
+	position = delta;
+}
+
+void Model::instantScale(const glm::vec3& scale) {
+	modelMatrixDelta = glm::scale(modelMatrixDelta, scale);
+}
+
+void Model::instantRotate(GLfloat angle, const glm::vec3& axis) {
+	modelMatrixDelta = glm::rotate(modelMatrixDelta, glm::radians(angle), axis);
+}
+
+void Model::instantTranslate(const glm::vec3& delta) {
+	modelMatrixDelta = glm::translate(modelMatrixDelta, delta);
+}
+
+glm::mat4 Model::getModelMatrix() {
+	modelMatrix = glm::mat4(1.0f);
+	modelMatrix = glm::scale(modelMatrix, scale);
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.x), glm::vec3(rotation.y, rotation.z, rotation.w));
+	modelMatrix = glm::translate(modelMatrix, position);
+	return modelMatrixDelta * modelMatrix;
+}
+
 void Model::Render() {
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, 0);
