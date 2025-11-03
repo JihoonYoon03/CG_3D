@@ -24,7 +24,7 @@ GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
 
-Model* test;
+Model* test, *pistol, *k1;
 DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
@@ -52,6 +52,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	// 데이터 초기화
 	XYZ = new DisplayBasis(1.2f);
 	test = new Model("Models/test.obj");
+	pistol = new Model("Models/Pistol.obj");
+	k1 = new Model("Models/K1.obj");
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
@@ -68,7 +70,7 @@ GLvoid drawScene()
 	glUseProgram(shaderProgramID);
 
 	glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
-	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -30.0f));
 	view = glm::rotate(view, glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	if (cursorEnabled)
@@ -92,6 +94,17 @@ GLvoid drawScene()
 	glUniform3f(glGetUniformLocation(shaderProgramID, "color_set"), 0.8f, 0.8f, 0.8f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(test->getModelMatrix()));
 	test->Render();
+
+	pistol->scaleModel({ 0.0001, 0.0001, 0.0001 });
+	pistol->translateModel({ 0.0, 0.0, 0.0 });
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(pistol->getModelMatrix()));
+	pistol->Render();
+
+	k1->scaleModel({ 0.002, 0.002, 0.002 });
+	k1->translateModel({ -20.0, 0.0, 0.0 });
+	k1->instantTranslate({ 0.01f, 0.0f, 0.0f });
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(k1->getModelMatrix()));
+	k1->Render();
 
 	glutSwapBuffers();
 }
