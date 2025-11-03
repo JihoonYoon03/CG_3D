@@ -21,11 +21,14 @@ GLint winWidth = 600, winHeight = 600;
 GLuint shaderProgramID; //--- 세이더 프로그램 이름
 GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
+
+
 Model* test;
+DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 GLfloat viewX = 0.0f, viewY = 0.0f;
-bool cursorDisabled = false;
+bool cursorEnabled = false;
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -46,6 +49,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glEnable(GL_DEPTH_TEST);
 
 	// 데이터 초기화
+	XYZ = new DisplayBasis(1.2f);
 	test = new Model("Models/test.obj");
 
 	glutDisplayFunc(drawScene);
@@ -63,14 +67,15 @@ GLvoid drawScene()
 
 	glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
 	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
-	view = glm::rotate(view, glm::radians(20.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	view = glm::rotate(view, glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	if (cursorDisabled)
+	view = glm::rotate(view, glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	view = glm::rotate(view, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	if (cursorEnabled)
 	{
 		view = glm::rotate(view, glm::radians(viewX), glm::vec3(0.0f, 1.0f, 0.0f));
 		view = glm::rotate(view, glm::radians(viewY), glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
+	model = glm::translate(model, glm::vec3(3.0f, 0.0f, 0.0f));
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -79,6 +84,13 @@ GLvoid drawScene()
 	glPointSize(10.0f);
 	glDrawArrays(GL_POINTS, 0, 1);
 
+	glUniform1i(glGetUniformLocation(shaderProgramID, "use_color_set"), false);
+	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), true);
+	XYZ->Render();
+	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), false);
+
+	glUniform1i(glGetUniformLocation(shaderProgramID, "use_color_set"), true);
+	glUniform3f(glGetUniformLocation(shaderProgramID, "color_set"), 0.8f, 0.8f, 0.8f);
 	test->Render();
 
 	glutSwapBuffers();
@@ -93,7 +105,7 @@ GLvoid Reshape(int w, int h)
 
 GLvoid MouseMotion(int x, int y)
 {
-	if (cursorDisabled == false)
+	if (cursorEnabled == false)
 		return;
 
 	viewX += (x - winWidth / 2) * 0.2f;
@@ -110,12 +122,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
 	case 'm':
-		if (cursorDisabled) {
-			cursorDisabled = false;
+		if (cursorEnabled) {
+			cursorEnabled = false;
 			glutSetCursor(GLUT_CURSOR_INHERIT);
 		}
 		else {
-			cursorDisabled = true;
+			cursorEnabled = true;
 			glutSetCursor(GLUT_CURSOR_NONE);
 		}
 		break;
