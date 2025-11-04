@@ -30,6 +30,7 @@ DisplayBasis* XYZ;
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 GLfloat mouseRotX = 0.0f, mouseRotY = 0.0f, deltaSpinX = 0.0f, deltaSpinY = 0.0f, deltaOrbitY = 0.0f, deltaScaleFromSelf = 1.0f, deltaScaleFromOrigin = 1.0f;
 GLfloat deltaTransX = 0.0f, deltaTransY = 0.0f;
+int selectedModel = 0;
 bool cursorEnabled = false;
 
 //--- 메인 함수
@@ -59,11 +60,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	test->scale({ 0.2, 0.2, 0.2 });
 	test->translate({ 1.0, 0.0, 0.0 });
 
-	/*pistol->scale({ 0.0001, 0.0001, 0.0001 });
-	pistol->translate({ 0.0, 0.0, 0.0 });
-
 	k1->scale({ 0.002, 0.002, 0.002 });
-	k1->translate({ -1.0, 0.0, 0.0 });*/
+	k1->translate({ -1.0, 0.0, 0.0 });
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
@@ -103,11 +101,8 @@ GLvoid drawScene()
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(test->getModelMatrix()));
 	test->Render();
 
-	/*glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(pistol->getModelMatrix()));
-	pistol->Render();
-
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(k1->getModelMatrix()));
-	k1->Render();*/
+	k1->Render();
 
 	glutSwapBuffers();
 }
@@ -137,6 +132,9 @@ GLvoid MouseMotion(int x, int y)
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
+	case '1': case '2': case '3':
+		selectedModel = key - '1';
+		break;
 	case 'x': case 'X':
 		if (deltaSpinX == 0.0f)
 			deltaSpinX = key == 'x' ? 1.0f : -1.0f;
@@ -201,12 +199,23 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 GLvoid TimerFunc(int value)
 {
-	test->translate({ deltaTransX, deltaTransY, 0.0f });
-	test->translate(test->retDistFromOrigin() * -1.0f);
-	test->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
-	test->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
-	test->translate(test->retDistFromOrigin());
-	test->rotate(deltaOrbitY, glm::vec3(0.0f, 1.0f, 0.0f));
+	if (selectedModel == 0 || selectedModel == 2) {
+		test->translate({ deltaTransX, deltaTransY, 0.0f });
+		test->translate(test->retDistFromOrigin() * -1.0f);
+		test->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
+		test->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
+		test->translate(test->retDistFromOrigin());
+		test->rotate(deltaOrbitY, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+
+	if (selectedModel == 1 || selectedModel == 2) {
+		k1->translate({ deltaTransX, deltaTransY, 0.0f });
+		k1->translate(k1->retDistFromOrigin() * -1.0f);
+		k1->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
+		k1->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
+		k1->translate(k1->retDistFromOrigin());
+		k1->rotate(deltaOrbitY, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }
