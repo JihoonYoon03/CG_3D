@@ -86,7 +86,7 @@ GLvoid drawScene() //--- 콜백 함수: 그리기 콜백 함수
 	glm::mat4 rotation = glm::mat4(1.0f);
 	rotation = glm::rotate(rotation, glm::radians(xRot), glm::vec3(1.0f, 0.0f, 0.0f));
 	rotation = glm::rotate(rotation, glm::radians(yRot), glm::vec3(0.0f, 1.0f, 0.0f));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "rotation"), 1, GL_FALSE, glm::value_ptr(rotation));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(rotation));
 
 	d_basis->Render();
 
