@@ -29,6 +29,7 @@ DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 GLfloat mouseRotX = 0.0f, mouseRotY = 0.0f, deltaSpinX = 0.0f, deltaSpinY = 0.0f, deltaOrbitY = 0.0f, deltaScaleFromSelf = 1.0f, deltaScaleFromOrigin = 1.0f;
+GLfloat deltaTransX = 0.0f, deltaTransY = 0.0f;
 bool cursorEnabled = false;
 
 //--- 메인 함수
@@ -166,9 +167,21 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		test->scale({ deltaScaleFromSelf, deltaScaleFromSelf, deltaScaleFromSelf });
 		test->translate(test->retDistFromOrigin());
 		break;
-	case 'd': case 'D':
+	case 'b': case 'B':
 		deltaScaleFromOrigin = key == 'd' ? 1.5f : 0.5f;
 		test->scale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
+		break;
+	case 'd': case 'D':
+		if (deltaTransX == 0)
+			deltaTransX = key == 'd' ? 0.01f : -0.01f;
+		else
+			deltaTransX = 0.0f;
+		break;
+	case 'e': case 'E':
+		if (deltaTransY == 0)
+			deltaTransY = key == 'e' ? 0.01f : -0.01f;
+		else
+			deltaTransY = 0.0f;
 		break;
 	case 'm':
 		if (cursorEnabled) {
@@ -188,6 +201,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 GLvoid TimerFunc(int value)
 {
+	test->translate({ deltaTransX, deltaTransY, 0.0f });
 	test->translate(test->retDistFromOrigin() * -1.0f);
 	test->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
 	test->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
