@@ -148,6 +148,18 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		else
 			deltaSpinY = 0.0f;
 		break;
+	case 'r': case 'R':
+		if (deltaOrbitY == 0.0f)
+			deltaOrbitY = key == 'r' ? 1.0f : -1.0f;
+		else
+			deltaOrbitY = 0.0f;
+		break;
+	/*case 'b': case 'B':
+		if (deltaScaleFromSelf == 0.0f)
+			deltaScaleFromSelf = key == 'b' ? 1.0f : 1.0f;
+		else
+			deltaScaleFromSelf = 0.0f;
+		break;*/
 	case 'm':
 		if (cursorEnabled) {
 			cursorEnabled = false;
@@ -167,9 +179,11 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 GLvoid TimerFunc(int value)
 {
 	test->translate(test->retDistFromOrigin() * -1.0f);
+	test->scale(glm::vec3(deltaScaleFromSelf, deltaScaleFromSelf, deltaScaleFromSelf));
 	test->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
 	test->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
 	test->translate(test->retDistFromOrigin());
+	test->rotate(deltaOrbitY, glm::vec3(0.0f, 1.0f, 0.0f));
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }
