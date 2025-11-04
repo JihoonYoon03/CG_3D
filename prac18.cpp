@@ -166,6 +166,10 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		test->scale({ deltaScaleFromSelf, deltaScaleFromSelf, deltaScaleFromSelf });
 		test->translate(test->retDistFromOrigin());
 		break;
+	case 'd': case 'D':
+		deltaScaleFromOrigin = key == 'd' ? 1.5f : 0.5f;
+		test->scale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
+		break;
 	case 'm':
 		if (cursorEnabled) {
 			cursorEnabled = false;
