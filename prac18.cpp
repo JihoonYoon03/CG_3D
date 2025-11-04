@@ -24,7 +24,7 @@ GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
 
-Model* test, *pistol, *k1;
+Model* test, * pistol, * k1;
 DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
@@ -154,12 +154,18 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		else
 			deltaOrbitY = 0.0f;
 		break;
-	/*case 'b': case 'B':
-		if (deltaScaleFromSelf == 0.0f)
-			deltaScaleFromSelf = key == 'b' ? 1.0f : 1.0f;
-		else
-			deltaScaleFromSelf = 0.0f;
-		break;*/
+	case 'a':
+		deltaScaleFromSelf = 1.5f;
+		test->translate(test->retDistFromOrigin() * -1.0f);
+		test->setDeltaScale({ deltaScaleFromSelf, deltaScaleFromSelf, deltaScaleFromSelf });
+		test->translate(test->retDistFromOrigin());
+		break;
+	case 'A':
+		deltaScaleFromSelf = 0.5f;
+		test->translate(test->retDistFromOrigin() * -1.0f);
+		test->scale({ deltaScaleFromSelf, deltaScaleFromSelf, deltaScaleFromSelf });
+		test->translate(test->retDistFromOrigin());
+		break;
 	case 'm':
 		if (cursorEnabled) {
 			cursorEnabled = false;
@@ -179,7 +185,6 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 GLvoid TimerFunc(int value)
 {
 	test->translate(test->retDistFromOrigin() * -1.0f);
-	test->scale(glm::vec3(deltaScaleFromSelf, deltaScaleFromSelf, deltaScaleFromSelf));
 	test->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
 	test->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
 	test->translate(test->retDistFromOrigin());
