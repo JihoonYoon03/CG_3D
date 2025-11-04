@@ -55,6 +55,15 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	pistol = new Model("Models/Pistol.obj");
 	k1 = new Model("Models/K1.obj");
 
+	test->scale({ 0.2, 0.2, 0.2 });
+	test->translate({ 1.0, 0.0, 0.0 });
+
+	/*pistol->scale({ 0.0001, 0.0001, 0.0001 });
+	pistol->translate({ 0.0, 0.0, 0.0 });
+
+	k1->scale({ 0.002, 0.002, 0.002 });
+	k1->translate({ -1.0, 0.0, 0.0 });*/
+
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
@@ -78,8 +87,6 @@ GLvoid drawScene()
 		view = glm::rotate(view, glm::radians(30.0f + mouseRotX), glm::vec3(0.0f, 1.0f, 0.0f));
 		view = glm::rotate(view, glm::radians(-30.0f + mouseRotY), glm::vec3(1.0f, 0.0f, 0.0f));
 	}
-	test->scaleModel({ 0.2, 0.2, 0.2 });
-	test->translateModel({ 3.0, 0.0, 0.0 });
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -95,16 +102,11 @@ GLvoid drawScene()
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(test->getModelMatrix()));
 	test->Render();
 
-	pistol->scaleModel({ 0.0001, 0.0001, 0.0001 });
-	pistol->translateModel({ 0.0, 0.0, 0.0 });
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(pistol->getModelMatrix()));
+	/*glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(pistol->getModelMatrix()));
 	pistol->Render();
 
-	k1->scaleModel({ 0.002, 0.002, 0.002 });
-	k1->translateModel({ -20.0, 0.0, 0.0 });
-	k1->instantTranslate({ 0.01f, 0.0f, 0.0f });
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(k1->getModelMatrix()));
-	k1->Render();
+	k1->Render();*/
 
 	glutSwapBuffers();
 }
@@ -136,9 +138,15 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	switch (key) {
 	case 'x': case 'X':
 		if (deltaSpinX == 0.0f)
-			deltaSpinX = key = 'x' ? 0.5f : -0.5f;
+			deltaSpinX = key == 'x' ? 1.0f : -1.0f;
 		else
 			deltaSpinX = 0.0f;
+		break;
+	case 'y': case 'Y':
+		if (deltaSpinY == 0.0f)
+			deltaSpinY = key == 'y' ? 1.0f : -1.0f;
+		else
+			deltaSpinY = 0.0f;
 		break;
 	case 'm':
 		if (cursorEnabled) {
@@ -158,9 +166,10 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 GLvoid TimerFunc(int value)
 {
-	deltaSpinX += deltaSpinX;
-	deltaSpinY += deltaSpinY;
-	deltaOrbitY += 0.2f;
+	test->translate(test->retDistFromOrigin() * -1.0f);
+	test->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
+	test->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
+	test->translate(test->retDistFromOrigin());
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }

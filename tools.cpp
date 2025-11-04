@@ -53,38 +53,46 @@ Model::Model(const std::string& filename) {
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
+
+	for (const auto& vertex : vertices) {
+		center += vertex;
+	}
+	center /= static_cast<GLfloat>(vertices.size());
 }
 
-void Model::scaleModel(const glm::vec3& scaleFactor) {
-	scale = scaleFactor;
+void Model::setDeltaScale(const glm::vec3& ds) {
+	deltaScale = glm::scale(glm::mat4(1.0f), ds);
+}
+void Model::setDeltaRotate(const glm::mat4& dr) {
+	deltaRotate = dr;
+}
+void Model::setDeltaTranslate(const glm::vec3& dt) {
+	deltaTranslate = glm::translate(glm::mat4(1.0f), dt);
 }
 
-void Model::rotateModel(GLfloat angle, const glm::vec3 axis) {
-	rotation = glm::vec4(angle, axis);
+void Model::scale(const glm::vec3& scaleFactor) {
+	transformQueue.push(glm::scale(glm::mat4(1.0f), scaleFactor));
 }
 
-void Model::translateModel(const glm::vec3& delta) {
-	position = delta;
+void Model::rotate(GLfloat angle, const glm::vec3& axis) {
+	transformQueue.push(glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis));
 }
 
-void Model::instantScale(const glm::vec3& scale) {
-	modelMatrixDelta = glm::scale(modelMatrixDelta, scale);
-}
-
-void Model::instantRotate(GLfloat angle, const glm::vec3& axis) {
-	modelMatrixDelta = glm::rotate(modelMatrixDelta, glm::radians(angle), axis);
-}
-
-void Model::instantTranslate(const glm::vec3& delta) {
-	modelMatrixDelta = glm::translate(modelMatrixDelta, delta);
+void Model::translate(const glm::vec3& delta) {
+	transformQueue.push(glm::translate(glm::mat4(1.0f), delta));
 }
 
 glm::mat4 Model::getModelMatrix() {
-	modelMatrix = glm::mat4(1.0f);
-	modelMatrix = glm::scale(modelMatrix, scale);
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(rotation.x), glm::vec3(rotation.y, rotation.z, rotation.w));
-	modelMatrix = glm::translate(modelMatrix, position);
-	return modelMatrixDelta * modelMatrix;
+	while (!transformQueue.empty()) {
+		modelMatrix = transformQueue.front() * modelMatrix;
+		transformQueue.pop();
+	}
+	return deltaTranslate * deltaRotate * deltaScale * modelMatrix;
+}
+
+glm::vec3 Model::retDistFromOrigin() {
+	glm::vec4 dist = deltaTranslate * deltaRotate * deltaScale * modelMatrix * glm::vec4(center, 1.0f);
+	return glm::vec3(dist.x, dist.y, dist.z);
 }
 
 void Model::Render() {
