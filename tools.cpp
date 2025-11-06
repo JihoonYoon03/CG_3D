@@ -42,6 +42,14 @@ Model::Model(const std::string& filename, const glm::vec3& size) {
 		vertex *= size;
 	}
 
+	glm::vec3 min_pos(FLT_MAX), max_pos(-FLT_MAX);
+	for (const auto& vertex : vertices) {
+		min_pos = glm::min(min_pos, vertex);
+		max_pos = glm::max(max_pos, vertex);
+	}
+
+	center = (min_pos + max_pos) * 0.5f;
+
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
@@ -59,10 +67,7 @@ Model::Model(const std::string& filename, const glm::vec3& size) {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
-	for (const auto& vertex : vertices) {
-		center += vertex;
-	}
-	center /= static_cast<GLfloat>(vertices.size());
+	basis = new DisplayBasis(0.2f, center);
 }
 
 void Model::setDefScale(const glm::vec3& ds) {
@@ -96,14 +101,16 @@ glm::mat4 Model::getModelMatrix() {
 }
 
 glm::vec3 Model::retDistTo(const glm::vec3& origin) {
-	glm::vec4 dist = modelMatrix * default_translate * default_rotate * default_scale * glm::vec4(origin - center, 1.0f);
-	return glm::vec3(dist.x, dist.y, dist.z);
+	glm::vec4 worldLocation = modelMatrix * default_translate * default_rotate * default_scale * glm::vec4(center, 1.0f);
+	return glm::vec3(worldLocation) - origin;
 }
 
 void Model::Render() {
 	if (!enabled) return;
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, 0);
+
+	basis->Render();
 }
 
 DisplayBasis::DisplayBasis(GLfloat offset, const glm::vec3& origin) : origin(origin) {

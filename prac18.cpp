@@ -86,10 +86,10 @@ GLvoid drawScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
-	glm::mat4 projection = glm::perspective(glm::radians(50.0f), 1.0f, 0.1f, 100.0f);
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 world = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -97,8 +97,8 @@ GLvoid drawScene()
 	world = glm::rotate(world, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	if (cursorEnabled)
 	{
-		world = glm::rotate(world, glm::radians(30.0f + m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
-		world = glm::rotate(world, glm::radians(-30.0f + m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
+		world = glm::rotate(world, glm::radians(m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
+		world = glm::rotate(world, glm::radians(m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "world"), 1, GL_FALSE, glm::value_ptr(world));
 
@@ -116,12 +116,14 @@ GLvoid drawScene()
 		if (model_list[page][i] != nullptr) {
 			glm::mat4 scale_origin = glm::mat4(1.0f);
 			if (selectedModel == i || selectedModel == 2) {
+				glm::vec3 current_pos = model_list[page][i]->retDistTo();
+
 				// 모델 기준 변환 구간
-				model_list[page][i]->translate(model_list[page][i]->retDistTo() * -1.0f);
+				model_list[page][i]->translate(current_pos * -1.0f);
 				model_list[page][i]->rotate(delta_spinX, glm::vec3(1.0f, 0.0f, 0.0f));
 				model_list[page][i]->rotate(delta_spinY, glm::vec3(0.0f, 1.0f, 0.0f));
 				model_list[page][i]->translate({ delta_translateX, delta_translateY, 0.0f });
-				model_list[page][i]->translate(model_list[page][i]->retDistTo());
+				model_list[page][i]->translate(current_pos);
 
 				// 원점 기준 변환 구간
 				model_list[page][i]->rotate(delta_orbitY, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -155,7 +157,6 @@ GLvoid MouseMotion(int x, int y)
 	if (m_rotationY < -89.0f) m_rotationY = -89.0f;
 
 	glutWarpPointer(winWidth / 2, winHeight / 2);
-	glutPostRedisplay();
 }
 
 GLvoid Keyboard(unsigned char key, int x, int y)

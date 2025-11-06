@@ -21,10 +21,13 @@ struct ColoredVertex {
 	glm::vec3 color;
 };
 
+class DisplayBasis;
+
 class Model {
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::uvec3> faces;
 	glm::vec3 center;
+	DisplayBasis* basis;
 
 	// 변환행렬 적용 이전에 SRT순으로 모델 변환
 	glm::mat4 default_scale = glm::mat4(1.0f);
@@ -57,6 +60,8 @@ public:
 	glm::mat4 getModelMatrix();
 
 	void setEnabled(bool state) { enabled = state; }
+	
+	~Model() { delete basis; }
 };
 
 class DisplayBasis {
