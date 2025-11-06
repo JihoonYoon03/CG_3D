@@ -24,7 +24,7 @@ GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 Model* test;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
-GLfloat mouseRotX = 0.0f, mouseRotY = 0.0f;
+GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 bool cursorEnabled = false;
 
 //--- 메인 함수
@@ -67,8 +67,8 @@ GLvoid drawScene()
 	view = glm::rotate(view, glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	if (cursorEnabled)
 	{
-		view = glm::rotate(view, glm::radians(mouseRotX), glm::vec3(0.0f, 1.0f, 0.0f));
-		view = glm::rotate(view, glm::radians(mouseRotY), glm::vec3(1.0f, 0.0f, 0.0f));
+		view = glm::rotate(view, glm::radians(m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
+		view = glm::rotate(view, glm::radians(m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f));
 
@@ -96,11 +96,11 @@ GLvoid MouseMotion(int x, int y)
 	if (cursorEnabled == false)
 		return;
 
-	mouseRotX += (x - winWidth / 2) * 0.2f;
-	mouseRotY += (y - winHeight / 2) * 0.2f;
+	m_rotationX += (x - winWidth / 2) * 0.2f;
+	m_rotationY += (y - winHeight / 2) * 0.2f;
 
-	if (mouseRotY > 89.0f) mouseRotY = 89.0f;
-	if (mouseRotY < -89.0f) mouseRotY = -89.0f;
+	if (m_rotationY > 89.0f) m_rotationY = 89.0f;
+	if (m_rotationY < -89.0f) m_rotationY = -89.0f;
 
 	glutWarpPointer(winWidth / 2, winHeight / 2);
 	glutPostRedisplay();

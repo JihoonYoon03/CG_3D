@@ -1,6 +1,6 @@
 #include "tools.h"
 
-Model::Model(const std::string& filename) {
+Model::Model(const std::string& filename, const glm::vec3& size) {
 	std::ifstream file(filename);
 	if (!file.is_open()) {
 		std::cerr << "Error opening file: " << filename << std::endl;
@@ -36,6 +36,11 @@ Model::Model(const std::string& filename) {
 
 	std::cout << "Loaded " << vertices.size() << " vertices, "
 		<< faces.size() << " faces" << std::endl;  // 디버그 출력
+
+	// 모델 크기 조정
+	for (auto& vertex : vertices) {
+		vertex *= size;
+	}
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);

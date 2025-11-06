@@ -23,15 +23,22 @@ GLuint shaderProgramID; //--- 세이더 프로그램 이름
 GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
-enum MODELS { DOG = 0, PISTOL, K1, KNIFE };
-Model* model_list[4] = { nullptr, nullptr, nullptr, nullptr };
+Model* model_list[2][2] = {nullptr, nullptr, nullptr, nullptr};
 DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
-GLfloat mouseRotX = 0.0f, mouseRotY = 0.0f, deltaSpinX = 0.0f, deltaSpinY = 0.0f, deltaOrbitY = 0.0f, deltaScaleFromSelf = 1.0f, deltaScaleFromOrigin = 1.0f;
-GLfloat deltaTransX = 0.0f, deltaTransY = 0.0f;
+
+// 고정 수치
+GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
+glm::vec3 scale_model = { 1.0f, 1.0f, 1.0f };
+glm::vec3 scale_from_origin = { 1.0f, 1.0f, 1.0f };
+
+// 고정 수치 변화량
+GLfloat delta_spinX = 0.0f, delta_spinY = 0.0f, delta_orbitY = 0.0f, delta_translateX = 0.0f, delta_translateY = 0.0f, delta_scale = 0.2f;
+
 int selectedModel = 0;
 bool cursorEnabled = false;
+unsigned int page = 0;
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -53,19 +60,17 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 
 	// 데이터 초기화
 	XYZ = new DisplayBasis(1.2f);
-	model_list[0] = new Model("Models/test.obj");
-	model_list[1] = new Model("Models/Pistol.obj");
-	model_list[2] = new Model("Models/K1.obj");
-	// model_list[3] = new Model("Models/Knife.obj");
+	model_list[0][0] = new Model("Models/test.obj", {0.2f, 0.2f, 0.2f});
+	model_list[0][1] = new Model("Models/Pistol.obj", { 0.0002f, 0.0002f, 0.0002f });
+	model_list[1][0] = new Model("Models/K1.obj", { 0.02f, 0.02f, 0.02f });
+	// model_list[1][1] = new Model("Models/Knife.obj");
 
-	model_list[DOG]->scale({ 0.2, 0.2, 0.2 });
-	model_list[DOG]->translate({ 1.0, 0.0, 0.0 });
+	model_list[0][0]->translate({ 1.0, 0.0, 0.0 });
 
-	model_list[K1]->scale({0.002, 0.002, 0.002});
-	model_list[K1]->translate({ -1.0, 0.0, 0.0 });
+	model_list[0][1]->translate({ -1.0, 0.0, 0.0 });
 
-	model_list[PISTOL]->setEnabled(false);
-	// model_list[KNIFE]->setEnabled(false);
+	model_list[1][0]->setEnabled(false);
+	// model_list[1][1]->setEnabled(false);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
@@ -83,7 +88,7 @@ GLvoid drawScene()
 
 	glm::mat4 projection = glm::perspective(glm::radians(50.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-	
+
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
@@ -92,11 +97,10 @@ GLvoid drawScene()
 	world = glm::rotate(world, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	if (cursorEnabled)
 	{
-		world = glm::rotate(world, glm::radians(30.0f + mouseRotX), glm::vec3(0.0f, 1.0f, 0.0f));
-		world = glm::rotate(world, glm::radians(-30.0f + mouseRotY), glm::vec3(1.0f, 0.0f, 0.0f));
+		world = glm::rotate(world, glm::radians(30.0f + m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
+		world = glm::rotate(world, glm::radians(-30.0f + m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "world"), 1, GL_FALSE, glm::value_ptr(world));
-
 
 
 	glUniform1i(glGetUniformLocation(shaderProgramID, "use_color_set"), false);
@@ -104,15 +108,26 @@ GLvoid drawScene()
 	XYZ->Render();
 	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), false);
 
+
 	glUniform1i(glGetUniformLocation(shaderProgramID, "use_color_set"), true);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "color_set"), 0.8f, 0.8f, 0.8f);
 
-	for (int i = 0; i < 4; i++) {
-		if (model_list[i] != nullptr) {
+	for (int i = 0; i < 2; i++) {
+		if (model_list[page][i] != nullptr) {
 			if (selectedModel == i || selectedModel == 2) {
-				glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(model_list[i]->getModelMatrix()));
-				model_list[i]->Render();
+				// 모델 기준 변환 구간
+				model_list[page][i]->translate(model_list[page][i]->retDistTo() * -1.0f);
+				model_list[page][i]->rotate(delta_spinX, glm::vec3(1.0f, 0.0f, 0.0f));
+				model_list[page][i]->rotate(delta_spinY, glm::vec3(0.0f, 1.0f, 0.0f));
+				model_list[page][i]->translate({ delta_translateX, delta_translateY, 0.0f });
+				model_list[page][i]->translate(model_list[page][i]->retDistTo());
+
+				// 원점 기준 변환 구간
+				model_list[page][i]->rotate(delta_orbitY, glm::vec3(0.0f, 1.0f, 0.0f));
 			}
+
+			glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(model_list[page][i]->getModelMatrix()));
+			model_list[page][i]->Render();
 		}
 	}
 
@@ -131,11 +146,11 @@ GLvoid MouseMotion(int x, int y)
 	if (cursorEnabled == false)
 		return;
 
-	mouseRotX += (x - winWidth / 2) * 0.2f;
-	mouseRotY += (y - winHeight / 2) * 0.2f;
+	m_rotationX += (x - winWidth / 2) * 0.2f;
+	m_rotationY += (y - winHeight / 2) * 0.2f;
 
-	if (mouseRotY > 89.0f) mouseRotY = 89.0f;
-	if (mouseRotY < -89.0f) mouseRotY = -89.0f;
+	if (m_rotationY > 89.0f) m_rotationY = 89.0f;
+	if (m_rotationY < -89.0f) m_rotationY = -89.0f;
 
 	glutWarpPointer(winWidth / 2, winHeight / 2);
 	glutPostRedisplay();
@@ -148,50 +163,50 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		selectedModel = key - '1';
 		break;
 	case 'x': case 'X':
-		if (deltaSpinX == 0.0f)
-			deltaSpinX = key == 'x' ? 1.0f : -1.0f;
+		if (delta_spinX == 0.0f)
+			delta_spinX = key == 'x' ? 1.0f : -1.0f;
 		else
-			deltaSpinX = 0.0f;
+			delta_spinX = 0.0f;
 		break;
 	case 'y': case 'Y':
-		if (deltaSpinY == 0.0f)
-			deltaSpinY = key == 'y' ? 1.0f : -1.0f;
+		if (delta_spinY == 0.0f)
+			delta_spinY = key == 'y' ? 1.0f : -1.0f;
 		else
-			deltaSpinY = 0.0f;
+			delta_spinY = 0.0f;
 		break;
 	case 'r': case 'R':
-		if (deltaOrbitY == 0.0f)
-			deltaOrbitY = key == 'r' ? 1.0f : -1.0f;
+		if (delta_orbitY == 0.0f)
+			delta_orbitY = key == 'r' ? 1.0f : -1.0f;
 		else
-			deltaOrbitY = 0.0f;
+			delta_orbitY = 0.0f;
 		break;
 	case 'a':
-		if (deltaScaleFromOrigin < 2.0f)
-			deltaScaleFromOrigin += 0.2f;
-		if (model_list[selectedModel] != nullptr)
-			model_list[selectedModel]->setDefScale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
+		if (glm::length(scale_model) < 2.0f)
+			scale_model += delta_scale;
+		if (model_list[page][selectedModel] != nullptr)
+			model_list[page][selectedModel]->setDefScale(scale_model);
 		break;
 	case 'A':
-		if (deltaScaleFromOrigin > 0.2f)
-			deltaScaleFromOrigin -= 0.2f;
-		if (model_list[selectedModel] != nullptr)
-			model_list[selectedModel]->setDefScale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
+		if (glm::length(scale_model) > 0.2f)
+			scale_model -= delta_scale;
+		if (model_list[page][selectedModel] != nullptr)
+			model_list[page][selectedModel]->setDefScale(scale_model);
 		break;
 	case 'b':
 		break;
 	case 'B':
 		break;
 	case 'd': case 'D':
-		if (deltaTransX == 0)
-			deltaTransX = key == 'd' ? 0.01f : -0.01f;
+		if (delta_translateX == 0)
+			delta_translateX = key == 'd' ? 0.01f : -0.01f;
 		else
-			deltaTransX = 0.0f;
+			delta_translateX = 0.0f;
 		break;
 	case 'e': case 'E':
-		if (deltaTransY == 0)
-			deltaTransY = key == 'e' ? 0.01f : -0.01f;
+		if (delta_translateY == 0)
+			delta_translateY = key == 'e' ? 0.01f : -0.01f;
 		else
-			deltaTransY = 0.0f;
+			delta_translateY = 0.0f;
 		break;
 	case 'm':
 		if (cursorEnabled) {
@@ -211,22 +226,6 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 GLvoid TimerFunc(int value)
 {
-	for (int i = 0; i < 4; i++) {
-		if (i == selectedModel || selectedModel == 2) {
-			if (model_list[i] != nullptr) {
-				
-				// 모델 기준 변환 구간
-				model_list[i]->translate(model_list[i]->retDistTo() * -1.0f);
-				model_list[i]->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
-				model_list[i]->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
-				model_list[i]->translate({ deltaTransX, deltaTransY, 0.0f });
-				model_list[i]->translate(model_list[i]->retDistTo());
-
-				// 원점 기준 변환 구간
-				model_list[i]->rotate(deltaOrbitY, glm::vec3(0.0f, 1.0f, 0.0f));
-			}
-		}
-	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }

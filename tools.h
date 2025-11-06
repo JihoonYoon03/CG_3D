@@ -41,7 +41,7 @@ class Model {
 	// 비활성 상태에선 동작 X
 	bool enabled = true;
 public:
-	Model(const std::string& filename);
+	Model(const std::string& filename, const glm::vec3& size = { 1.0f, 1.0f, 1.0f });
 
 	void setDefScale(const glm::vec3& ds);
 	void setDefRotate(const glm::mat4& dr);
