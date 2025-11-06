@@ -31,12 +31,15 @@ class Model {
 	// modelMatrix에 적용할 변환 행렬 큐
 	std::queue<glm::mat4> transformQueue;
 
-	// 원본 변환 행렬 유지하며 적용되는 변환
+	// 변환행렬 적용 후 SRT 순으로 최종 추가 변환
 	glm::mat4 deltaScale = glm::mat4(1.0f);
 	glm::mat4 deltaRotate = glm::mat4(1.0f);
 	glm::mat4 deltaTranslate = glm::mat4(1.0f);
 
 	GLuint VAO, VBO, EBO;
+
+	// 비활성 상태에선 동작 X
+	bool enabled = true;
 public:
 	Model(const std::string& filename);
 
@@ -50,21 +53,19 @@ public:
 
 	void Render();
 	void resetModelMatrix() { modelMatrix = glm::mat4(1.0f); }
-	glm::vec3 retDistFromOrigin();
+	glm::vec3 retDistTo(const glm::vec3& origin = { 0.0f, 0.0f, 0.0f });
 	glm::mat4 getModelMatrix();
+
+	void setEnabled(bool state) { enabled = state; }
 };
 
 class DisplayBasis {
-	ColoredVertex xyz[3][2] =
-	{
-	{ { { 0.0f, 0.0f, 0.0f }, { 0.1f, 0.1f, 0.0f } }, { { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } } },
-	{ { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.1f, 0.1f } }, { { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } } },
-	{ { { 0.0f, 0.0f, 0.0f }, { 0.1f, 0.0f, 0.1f } }, { { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } } }
-	};
+	glm::vec3 origin;
+	ColoredVertex xyz[3][2];
 
 	GLuint VAO, VBO;
 public:
-	DisplayBasis(GLfloat offset = 1.0f);
+	DisplayBasis(GLfloat offset = 1.0f, const glm::vec3& origin = { 0.0f, 0.0f, 0.0f });
 	void Render();
 };
 

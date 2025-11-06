@@ -23,8 +23,8 @@ GLuint shaderProgramID; //--- 세이더 프로그램 이름
 GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
-
-Model* test, * pistol, * k1;
+enum MODELS { DOG = 0, PISTOL, K1, KNIFE };
+Model* model_list[4] = { nullptr, nullptr, nullptr, nullptr };
 DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
@@ -53,15 +53,19 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 
 	// 데이터 초기화
 	XYZ = new DisplayBasis(1.2f);
-	test = new Model("Models/test.obj");
-	pistol = new Model("Models/Pistol.obj");
-	k1 = new Model("Models/K1.obj");
+	model_list[0] = new Model("Models/test.obj");
+	model_list[1] = new Model("Models/Pistol.obj");
+	model_list[2] = new Model("Models/K1.obj");
+	// model_list[3] = new Model("Models/Knife.obj");
 
-	test->scale({ 0.2, 0.2, 0.2 });
-	test->translate({ 1.0, 0.0, 0.0 });
+	model_list[DOG]->scale({ 0.2, 0.2, 0.2 });
+	model_list[DOG]->translate({ 1.0, 0.0, 0.0 });
 
-	k1->scale({ 0.002, 0.002, 0.002 });
-	k1->translate({ -1.0, 0.0, 0.0 });
+	model_list[K1]->scale({0.002, 0.002, 0.002});
+	model_list[K1]->translate({ -1.0, 0.0, 0.0 });
+
+	model_list[PISTOL]->setEnabled(false);
+	// model_list[KNIFE]->setEnabled(false);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
@@ -102,11 +106,15 @@ GLvoid drawScene()
 
 	glUniform1i(glGetUniformLocation(shaderProgramID, "use_color_set"), true);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "color_set"), 0.8f, 0.8f, 0.8f);
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(test->getModelMatrix()));
-	test->Render();
 
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(k1->getModelMatrix()));
-	k1->Render();
+	for (int i = 0; i < 4; i++) {
+		if (model_list[i] != nullptr) {
+			if (selectedModel == i || selectedModel == 2) {
+				glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(model_list[i]->getModelMatrix()));
+				model_list[i]->Render();
+			}
+		}
+	}
 
 	glutSwapBuffers();
 }
@@ -158,20 +166,20 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			deltaOrbitY = 0.0f;
 		break;
 	case 'a':
-		deltaScaleFromSelf = 1.5f;
-		test->translate(test->retDistFromOrigin() * -1.0f);
-		test->setDeltaScale({ deltaScaleFromSelf, deltaScaleFromSelf, deltaScaleFromSelf });
-		test->translate(test->retDistFromOrigin());
+		if (deltaScaleFromOrigin < 2.0f)
+			deltaScaleFromOrigin += 0.2f;
+		if (model_list[selectedModel] != nullptr)
+			model_list[selectedModel]->setDeltaScale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
 		break;
 	case 'A':
-		deltaScaleFromSelf = 0.5f;
-		test->translate(test->retDistFromOrigin() * -1.0f);
-		test->scale({ deltaScaleFromSelf, deltaScaleFromSelf, deltaScaleFromSelf });
-		test->translate(test->retDistFromOrigin());
+		if (deltaScaleFromOrigin > 0.2f)
+			deltaScaleFromOrigin -= 0.2f;
+		if (model_list[selectedModel] != nullptr)
+			model_list[selectedModel]->setDeltaScale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
 		break;
-	case 'b': case 'B':
-		deltaScaleFromOrigin = key == 'd' ? 1.5f : 0.5f;
-		test->scale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
+	case 'b':
+		break;
+	case 'B':
 		break;
 	case 'd': case 'D':
 		if (deltaTransX == 0)
@@ -203,22 +211,21 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 GLvoid TimerFunc(int value)
 {
-	if (selectedModel == 0 || selectedModel == 2) {
-		test->translate({ deltaTransX, deltaTransY, 0.0f });
-		test->translate(test->retDistFromOrigin() * -1.0f);
-		test->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
-		test->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
-		test->translate(test->retDistFromOrigin());
-		test->rotate(deltaOrbitY, glm::vec3(0.0f, 1.0f, 0.0f));
-	}
+	for (int i = 0; i < 4; i++) {
+		if (i == selectedModel || selectedModel == 2) {
+			if (model_list[i] != nullptr) {
+				
+				// 모델 기준 변환 구간
+				model_list[i]->translate(model_list[i]->retDistTo() * -1.0f);
+				model_list[i]->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
+				model_list[i]->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
+				model_list[i]->translate({ deltaTransX, deltaTransY, 0.0f });
+				model_list[i]->translate(model_list[i]->retDistTo());
 
-	if (selectedModel == 1 || selectedModel == 2) {
-		k1->translate({ deltaTransX, deltaTransY, 0.0f });
-		k1->translate(k1->retDistFromOrigin() * -1.0f);
-		k1->rotate(deltaSpinX, glm::vec3(1.0f, 0.0f, 0.0f));
-		k1->rotate(deltaSpinY, glm::vec3(0.0f, 1.0f, 0.0f));
-		k1->translate(k1->retDistFromOrigin());
-		k1->rotate(deltaOrbitY, glm::vec3(0.0f, 1.0f, 0.0f));
+				// 원점 기준 변환 구간
+				model_list[i]->rotate(deltaOrbitY, glm::vec3(0.0f, 1.0f, 0.0f));
+			}
+		}
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);

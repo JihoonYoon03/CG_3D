@@ -61,25 +61,25 @@ Model::Model(const std::string& filename) {
 }
 
 void Model::setDeltaScale(const glm::vec3& ds) {
-	deltaScale = glm::scale(glm::mat4(1.0f), ds);
+	if (enabled) deltaScale = glm::scale(glm::mat4(1.0f), ds);
 }
 void Model::setDeltaRotate(const glm::mat4& dr) {
-	deltaRotate = dr;
+	if (enabled) deltaRotate = dr;
 }
 void Model::setDeltaTranslate(const glm::vec3& dt) {
-	deltaTranslate = glm::translate(glm::mat4(1.0f), dt);
+	if (enabled) deltaTranslate = glm::translate(glm::mat4(1.0f), dt);
 }
 
 void Model::scale(const glm::vec3& scaleFactor) {
-	transformQueue.push(glm::scale(glm::mat4(1.0f), scaleFactor));
+	if (enabled) transformQueue.push(glm::scale(glm::mat4(1.0f), scaleFactor));
 }
 
 void Model::rotate(GLfloat angle, const glm::vec3& axis) {
-	transformQueue.push(glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis));
+	if (enabled) transformQueue.push(glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis));
 }
 
 void Model::translate(const glm::vec3& delta) {
-	transformQueue.push(glm::translate(glm::mat4(1.0f), delta));
+	if (enabled) transformQueue.push(glm::translate(glm::mat4(1.0f), delta));
 }
 
 glm::mat4 Model::getModelMatrix() {
@@ -87,20 +87,29 @@ glm::mat4 Model::getModelMatrix() {
 		modelMatrix = transformQueue.front() * modelMatrix;
 		transformQueue.pop();
 	}
-	return deltaTranslate * deltaRotate * deltaScale * modelMatrix;
+	return modelMatrix * deltaTranslate * deltaRotate * deltaScale;
 }
 
-glm::vec3 Model::retDistFromOrigin() {
-	glm::vec4 dist = deltaTranslate * deltaRotate * deltaScale * modelMatrix * glm::vec4(center, 1.0f);
+glm::vec3 Model::retDistTo(const glm::vec3& origin) {
+	glm::vec4 dist = modelMatrix * deltaTranslate * deltaRotate * deltaScale * glm::vec4(origin - center, 1.0f);
 	return glm::vec3(dist.x, dist.y, dist.z);
 }
 
 void Model::Render() {
+	if (!enabled) return;
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, 0);
 }
 
-DisplayBasis::DisplayBasis(GLfloat offset) {
+DisplayBasis::DisplayBasis(GLfloat offset, const glm::vec3& origin) : origin(origin) {
+
+	xyz[0][0] = { origin, { 0.1f, 0.1f, 0.0f } };
+	xyz[0][1] = { origin + glm::vec3(1.0f, 0.0f, 0.0f), { 1.0f, 0.0f, 0.0f } };
+	xyz[1][0] = { origin, { 0.0f, 0.1f, 0.1f } };
+	xyz[1][1] = { origin + glm::vec3(0.0f, 1.0f, 0.0f), { 0.0f, 1.0f, 0.0f } };
+	xyz[2][0] = { origin, { 0.1f, 0.0f, 0.1f } };
+	xyz[2][1] = { origin + glm::vec3(0.0f, 0.0f, 1.0f), { 0.0f, 0.0f, 1.0f } };
+
 	for (int i = 0; i < 3; i++) {
 		xyz[i][0].pos *= offset;
 		xyz[i][1].pos *= offset;
