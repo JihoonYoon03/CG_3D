@@ -26,15 +26,15 @@ class Model {
 	std::vector<glm::uvec3> faces;
 	glm::vec3 center;
 
+	// 변환행렬 적용 이전에 SRT순으로 모델 변환
+	glm::mat4 default_scale = glm::mat4(1.0f);
+	glm::mat4 default_rotate = glm::mat4(1.0f);
+	glm::mat4 default_translate = glm::mat4(1.0f);
+
 	// 로컬 모델 변환
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
 	// modelMatrix에 적용할 변환 행렬 큐
 	std::queue<glm::mat4> transformQueue;
-
-	// 변환행렬 적용 후 SRT 순으로 최종 추가 변환
-	glm::mat4 deltaScale = glm::mat4(1.0f);
-	glm::mat4 deltaRotate = glm::mat4(1.0f);
-	glm::mat4 deltaTranslate = glm::mat4(1.0f);
 
 	GLuint VAO, VBO, EBO;
 
@@ -43,9 +43,9 @@ class Model {
 public:
 	Model(const std::string& filename);
 
-	void setDeltaScale(const glm::vec3& ds);
-	void setDeltaRotate(const glm::mat4& dr);
-	void setDeltaTranslate(const glm::vec3& dt);
+	void setDefScale(const glm::vec3& ds);
+	void setDefRotate(const glm::mat4& dr);
+	void setDefTranslate(const glm::vec3& dt);
 	
 	void scale(const glm::vec3& scaleFactor);
 	void rotate(GLfloat angle, const glm::vec3& axis);

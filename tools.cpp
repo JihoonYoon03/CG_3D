@@ -60,14 +60,14 @@ Model::Model(const std::string& filename) {
 	center /= static_cast<GLfloat>(vertices.size());
 }
 
-void Model::setDeltaScale(const glm::vec3& ds) {
-	if (enabled) deltaScale = glm::scale(glm::mat4(1.0f), ds);
+void Model::setDefScale(const glm::vec3& ds) {
+	if (enabled) default_scale = glm::scale(glm::mat4(1.0f), ds);
 }
-void Model::setDeltaRotate(const glm::mat4& dr) {
-	if (enabled) deltaRotate = dr;
+void Model::setDefRotate(const glm::mat4& dr) {
+	if (enabled) default_rotate = dr;
 }
-void Model::setDeltaTranslate(const glm::vec3& dt) {
-	if (enabled) deltaTranslate = glm::translate(glm::mat4(1.0f), dt);
+void Model::setDefTranslate(const glm::vec3& dt) {
+	if (enabled) default_translate = glm::translate(glm::mat4(1.0f), dt);
 }
 
 void Model::scale(const glm::vec3& scaleFactor) {
@@ -87,11 +87,11 @@ glm::mat4 Model::getModelMatrix() {
 		modelMatrix = transformQueue.front() * modelMatrix;
 		transformQueue.pop();
 	}
-	return modelMatrix * deltaTranslate * deltaRotate * deltaScale;
+	return modelMatrix * default_translate * default_rotate * default_scale;
 }
 
 glm::vec3 Model::retDistTo(const glm::vec3& origin) {
-	glm::vec4 dist = modelMatrix * deltaTranslate * deltaRotate * deltaScale * glm::vec4(origin - center, 1.0f);
+	glm::vec4 dist = modelMatrix * default_translate * default_rotate * default_scale * glm::vec4(origin - center, 1.0f);
 	return glm::vec3(dist.x, dist.y, dist.z);
 }
 

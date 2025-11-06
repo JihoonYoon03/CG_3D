@@ -169,13 +169,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		if (deltaScaleFromOrigin < 2.0f)
 			deltaScaleFromOrigin += 0.2f;
 		if (model_list[selectedModel] != nullptr)
-			model_list[selectedModel]->setDeltaScale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
+			model_list[selectedModel]->setDefScale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
 		break;
 	case 'A':
 		if (deltaScaleFromOrigin > 0.2f)
 			deltaScaleFromOrigin -= 0.2f;
 		if (model_list[selectedModel] != nullptr)
-			model_list[selectedModel]->setDeltaScale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
+			model_list[selectedModel]->setDefScale({ deltaScaleFromOrigin, deltaScaleFromOrigin, deltaScaleFromOrigin });
 		break;
 	case 'b':
 		break;
