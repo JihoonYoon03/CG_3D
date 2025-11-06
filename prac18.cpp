@@ -28,12 +28,12 @@ DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 
-// 고정 수치
+// 변환량
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 glm::vec3 scale_model = { 1.0f, 1.0f, 1.0f };
 glm::vec3 scale_from_origin = { 1.0f, 1.0f, 1.0f };
 
-// 고정 수치 변화량
+// 변환 변화량
 GLfloat delta_spinX = 0.0f, delta_spinY = 0.0f, delta_orbitY = 0.0f, delta_translateX = 0.0f, delta_translateY = 0.0f, delta_scale = 0.2f;
 
 int selectedModel = 0;
@@ -114,6 +114,7 @@ GLvoid drawScene()
 
 	for (int i = 0; i < 2; i++) {
 		if (model_list[page][i] != nullptr) {
+			glm::mat4 scale_origin = glm::mat4(1.0f);
 			if (selectedModel == i || selectedModel == 2) {
 				// 모델 기준 변환 구간
 				model_list[page][i]->translate(model_list[page][i]->retDistTo() * -1.0f);
@@ -124,9 +125,10 @@ GLvoid drawScene()
 
 				// 원점 기준 변환 구간
 				model_list[page][i]->rotate(delta_orbitY, glm::vec3(0.0f, 1.0f, 0.0f));
+				scale_origin = glm::scale(scale_origin, scale_from_origin);
 			}
 
-			glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(model_list[page][i]->getModelMatrix()));
+			glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(scale_origin * model_list[page][i]->getModelMatrix()));
 			model_list[page][i]->Render();
 		}
 	}
@@ -181,20 +183,25 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			delta_orbitY = 0.0f;
 		break;
 	case 'a':
-		if (glm::length(scale_model) < 2.0f)
+		if (scale_model.x < 2.0f)
 			scale_model += delta_scale;
 		if (model_list[page][selectedModel] != nullptr)
 			model_list[page][selectedModel]->setDefScale(scale_model);
 		break;
 	case 'A':
-		if (glm::length(scale_model) > 0.2f)
+		if (scale_model.x > 0.4f)
 			scale_model -= delta_scale;
 		if (model_list[page][selectedModel] != nullptr)
 			model_list[page][selectedModel]->setDefScale(scale_model);
 		break;
 	case 'b':
+		if (scale_from_origin.x < 2.0f) {
+			scale_from_origin += delta_scale;
+		}
 		break;
 	case 'B':
+		if (scale_from_origin.x > 0.4f)
+			scale_from_origin -= delta_scale;
 		break;
 	case 'd': case 'D':
 		if (delta_translateX == 0)
