@@ -14,6 +14,7 @@
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
+GLvoid KeyboardUp(unsigned char key, int x, int y);
 GLvoid MouseMotion(int x, int y);
 GLvoid TimerFunc(int value);
 
@@ -25,6 +26,8 @@ class Orbit {
 	glm::mat4 rotation_mat = glm::mat4(1.0f);
 	glm::mat4 translation_mat = glm::mat4(1.0f);
 	std::vector<ColoredVertex> orbitPoints;
+
+	Model* parent = nullptr;
 
 	GLuint VAO, VBO;
 public:
@@ -56,6 +59,10 @@ public:
 		glEnableVertexAttribArray(1);
 	}
 
+	void setParent(Model* parent) {
+		this->parent = parent;
+	}
+
 	void scale(glm::vec3 scaleFactor) {
 		scale_mat = glm::scale(glm::mat4(1.0f), scaleFactor);
 	}
@@ -69,7 +76,10 @@ public:
 	}
 
 	glm::mat4 getModelMatrix() {
-		return translation_mat * rotation_mat * scale_mat;
+		glm::mat4 parentMatrix = glm::mat4(1.0f);
+		if (parent != nullptr) parentMatrix = parent->getModelMatrix();
+
+		return parentMatrix * translation_mat * rotation_mat * scale_mat;
 	}
 
 	void Render() {
@@ -96,6 +106,7 @@ GLfloat orbit_radius_sun = 2.0f, orbit_radius_planet = 0.8f;
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 
 // 수치 변화량
+glm::vec3 sun_translate(0.0f, 0.0f, 0.0f);
 bool isOrtho = false, isWire = false, zRotate = false;
 
 //--- 메인 함수
@@ -123,28 +134,32 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	sun = new Model("Models/Sphere.obj", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	for (int i = 0; i < 3; i++) {
 		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
+		orbit_sun[i] = new Orbit(glm::vec3(0.2f, 0.5f, 0.2f));
+		orbit_sun[i]->setParent(sun);
+		orbit_sun[i]->scale(glm::vec3(orbit_radius_sun + i, 1.0f, orbit_radius_sun + i));
+		orbit_sun[i]->rotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
+
 		planet[i] = new Model("Models/Sphere.obj", glm::vec3(0.3f, 0.3f, 0.3f), glm::vec3(0.0f, 1.0f, 0.0f));
 		planet[i]->setParent(sun);
-		planet[i]->translate(glm::vec3(orbit_radius_sun + i * 0.7f, 0.0f, 0.0f));
+		planet[i]->translate(glm::vec3(orbit_radius_sun + i, 0.0f, 0.0f));
 		planet[i]->rotate(120.0f * i, glm::vec3(0.0f, 1.0f, 0.0f));
 		planet[i]->rotate(offset, glm::vec3(0.0f, 0.0f, 1.0f));
 
-		orbit_sun[i] = new Orbit(glm::vec3(0.2f, 0.5f, 0.2f));
-		orbit_sun[i]->scale(glm::vec3(orbit_radius_sun + i * 0.7f, 1.0f, orbit_radius_sun + i * 0.7f));
-		orbit_sun[i]->rotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
+		orbit_planet[i] = new Orbit(glm::vec3(0.0f, 0.5f, 0.5f));
+		orbit_planet[i]->setParent(planet[i]);
+		orbit_planet[i]->scale(glm::vec3(orbit_radius_planet, 1.0f, orbit_radius_planet));
 
 		moon[i] = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 0.0f, 0.0f));
 		moon[i]->setParent(planet[i]);
 		moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
 
-		orbit_planet[i] = new Orbit(glm::vec3(0.0f, 0.5f, 0.5f));
-		orbit_planet[i]->scale(glm::vec3(orbit_radius_planet, 1.0f, orbit_radius_planet));
-		orbit_planet[i]->rotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
+		//orbit_planet[i]->rotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
 	}
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
+	glutKeyboardUpFunc(KeyboardUp);
 	glutMotionFunc(MouseMotion);
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
@@ -173,6 +188,7 @@ GLvoid drawScene()
 
 	XYZ->Render();
 
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(sun->getModelMatrix()));
 	sun->Render();
 	for (int i = 0; i < 3; i++) {
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(orbit_sun[i]->getModelMatrix()));
@@ -180,6 +196,8 @@ GLvoid drawScene()
 
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(planet[i]->getModelMatrix()));
 		planet[i]->Render();
+
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(orbit_planet[i]->getModelMatrix()));
 		orbit_planet[i]->Render();
 
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(moon[i]->getModelMatrix()));
@@ -211,8 +229,21 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		// 와이어
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		break;
-	case 'w': case 'a': case 's': case 'd':
-		// 도형 좌우상하 이동(x,y)
+	case 'w':
+		// sun y+
+		if (sun_translate.y <= 0) sun_translate.y += 0.1f;
+		break;
+	case 's':
+		// sun y- 
+		if (sun_translate.y >= 0) sun_translate.y -= 0.1f;
+		break;
+	case 'a':
+		// sun x-
+		if (sun_translate.x >= 0) sun_translate.x -= 0.1f;
+		break;
+	case 'd':
+		// sun x+
+		if (sun_translate.x <= 0) sun_translate.x += 0.1f;
 		break;
 	case '+': case '-':
 		// 도형 앞뒤로 이동(z)
@@ -231,8 +262,27 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	}
 }
 
+GLvoid KeyboardUp(unsigned char key, int x, int y)
+{
+	switch (key) {
+	case 'w':
+		if (sun_translate.y >= 0.1f) sun_translate.y -= 0.1f;
+		break;
+	case 's':
+		if (sun_translate.y <= -0.1f) sun_translate.y += 0.1f;
+		break;
+	case 'a':
+		if (sun_translate.x <= -0.1f) sun_translate.x += 0.1f;
+		break;
+	case 'd':
+		if (sun_translate.x >= 0.1f) sun_translate.x -= 0.1f;
+		break;
+	}
+}
+
 GLvoid TimerFunc(int value)
 {
+	sun->translate(sun_translate);
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }
