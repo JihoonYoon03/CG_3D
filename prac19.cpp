@@ -125,12 +125,12 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
 		planet[i] = new Model("Models/Sphere.obj", glm::vec3(0.3f, 0.3f, 0.3f), glm::vec3(0.0f, 1.0f, 0.0f));
 		planet[i]->setParent(sun);
-		planet[i]->translate(glm::vec3(orbit_radius_sun + i, 0.0f, 0.0f));
+		planet[i]->translate(glm::vec3(orbit_radius_sun + i * 0.7f, 0.0f, 0.0f));
 		planet[i]->rotate(120.0f * i, glm::vec3(0.0f, 1.0f, 0.0f));
 		planet[i]->rotate(offset, glm::vec3(0.0f, 0.0f, 1.0f));
 
 		orbit_sun[i] = new Orbit(glm::vec3(0.2f, 0.5f, 0.2f));
-		orbit_sun[i]->scale(glm::vec3(orbit_radius_sun + i, 1.0f, orbit_radius_sun + i));
+		orbit_sun[i]->scale(glm::vec3(orbit_radius_sun + i * 0.7f, 1.0f, orbit_radius_sun + i * 0.7f));
 		orbit_sun[i]->rotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
 
 		moon[i] = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -161,7 +161,7 @@ GLvoid drawScene()
 	else projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 15.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 world = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -203,8 +203,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		// 직각/원근 투영
 		isOrtho = key == 'p' ? true : false;
 		break;
-	case 'm': case 'M':
-		// 솔리드/와이어
+	case 'm':
+		// 솔리드
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		break;
+	case 'M':
+		// 와이어
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		break;
 	case 'w': case 'a': case 's': case 'd':
 		// 도형 좌우상하 이동(x,y)
