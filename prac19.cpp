@@ -22,6 +22,7 @@ GLuint shaderProgramID; //--- 세이더 프로그램 이름
 GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
+Model* sun, *planet[3], *moon[3];
 DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
@@ -52,7 +53,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glEnable(GL_DEPTH_TEST);
 
 	// 데이터 초기화
-	XYZ = new DisplayBasis(1.0f);
+	XYZ = new DisplayBasis(2.0f);
+	sun = new Model("Models/Sphere.obj", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
@@ -70,7 +72,7 @@ GLvoid drawScene()
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 world = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -78,11 +80,9 @@ GLvoid drawScene()
 	world = glm::rotate(world, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "world"), 1, GL_FALSE, glm::value_ptr(world));
 
-
-	glUniform1i(glGetUniformLocation(shaderProgramID, "use_color_set"), false);
-	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), true);
 	XYZ->Render();
-	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), false);
+
+	sun->Render();
 
 	glutSwapBuffers();
 }
