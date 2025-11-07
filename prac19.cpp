@@ -245,8 +245,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		// sun x+
 		if (sun_translate.x <= 0) sun_translate.x += 0.1f;
 		break;
-	case '+': case '-':
-		// 도형 앞뒤로 이동(z)
+	case '=':
+		// sun z+
+		if (sun_translate.z <= 0) sun_translate.z += 0.1f;
+		break;
+	case '-':
+		// sun z-
+		if (sun_translate.z >= 0) sun_translate.z -= 0.1f;
 		break;
 	case 'y': case 'Y':
 		// 궤도 반지름 증감
@@ -276,6 +281,12 @@ GLvoid KeyboardUp(unsigned char key, int x, int y)
 		break;
 	case 'd':
 		if (sun_translate.x >= 0.1f) sun_translate.x -= 0.1f;
+		break;
+	case '=':
+		if (sun_translate.z >= 0.1f) sun_translate.z -= 0.1f;
+		break;
+	case '-':
+		if (sun_translate.z <= -0.1f) sun_translate.z += 0.1f;
 		break;
 	}
 }
