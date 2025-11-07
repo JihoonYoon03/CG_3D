@@ -79,6 +79,10 @@ Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3
 	basis = new DisplayBasis(0.2f, center);
 }
 
+void Model::setParent(Model* parent) {
+	if (enabled) this->parent = parent;
+}
+
 void Model::setDefScale(const glm::vec3& ds) {
 	if (enabled) default_scale = glm::scale(glm::mat4(1.0f), ds);
 }
@@ -119,7 +123,15 @@ glm::mat4 Model::getModelMatrix() {
 		modelMatrix = transformQueue.front() * modelMatrix;
 		transformQueue.pop();
 	}
-	return modelMatrix * default_translate * default_rotate * default_scale;
+	
+	glm::mat4 parent_matrix(1.0f);
+	if (parent != nullptr) {
+		parent_matrix = parent->getModelMatrix();
+	}
+
+	
+	// 모델 중심 변환 -> 모델 변환 -> 부모 변환
+	return parent_matrix * modelMatrix * default_translate * default_rotate * default_scale;
 }
 
 void Model::resetModelMatrix() {

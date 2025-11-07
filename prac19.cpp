@@ -14,6 +14,7 @@
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
+GLvoid MouseMotion(int x, int y);
 GLvoid TimerFunc(int value);
 
 //--- 필요한 변수 선언
@@ -28,9 +29,11 @@ DisplayBasis* XYZ;
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 
 // 변환 수치
+GLfloat orbit_radius_sun = 2.0f, orbit_radius_planet = 0.8f;
+GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 
 // 수치 변화량
-
+bool cursorEnabled = false;
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -55,10 +58,21 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	// 데이터 초기화
 	XYZ = new DisplayBasis(2.0f);
 	sun = new Model("Models/Sphere.obj", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	for (int i = 0; i < 3; i++) {
+		planet[i] = new Model("Models/Sphere.obj", glm::vec3(0.3f, 0.3f, 0.3f), glm::vec3(0.0f, 1.0f, 0.0f));
+		planet[i]->setParent(sun);
+		planet[i]->translate(glm::vec3(orbit_radius_sun + i, 0.0f, 0.0f));
+		planet[i]->rotate(120.0f * i, glm::vec3(0.0f, 1.0f, 0.0f));
+
+		moon[i] = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 0.0f, 0.0f));
+		moon[i]->setParent(planet[i]);
+		moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
+	}
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
+	glutMotionFunc(MouseMotion);
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
 }
@@ -72,17 +86,26 @@ GLvoid drawScene()
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 world = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	world = glm::rotate(world, glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	world = glm::rotate(world, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	world = glm::rotate(world, glm::radians(30.0f + m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
+	world = glm::rotate(world, glm::radians(-30.0f + m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "world"), 1, GL_FALSE, glm::value_ptr(world));
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
 	XYZ->Render();
 
 	sun->Render();
+	for (int i = 0; i < 3; i++) {
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(planet[i]->getModelMatrix()));
+		planet[i]->Render();
+
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(moon[i]->getModelMatrix()));
+		moon[i]->Render();
+	}
 
 	glutSwapBuffers();
 }
@@ -115,6 +138,8 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'z': case 'Z':
 		// 중심 제외 z축 회전
 		break;
+	case 'l':
+		break;
 	case 'q':
 		exit(0);
 		break;
@@ -125,4 +150,15 @@ GLvoid TimerFunc(int value)
 {
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
+}
+
+GLvoid MouseMotion(int x, int y)
+{
+	m_rotationX += (x - winWidth / 2) * 0.2f;
+	m_rotationY += (y - winHeight / 2) * 0.2f;
+
+	if (m_rotationY > 59.0f) m_rotationY = 59.0f;
+	if (m_rotationY < -119.0f) m_rotationY = -119.0f;
+
+	glutWarpPointer(winWidth / 2, winHeight / 2);
 }

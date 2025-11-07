@@ -41,12 +41,17 @@ class Model {
 	// modelMatrix에 적용할 변환 행렬 큐
 	std::queue<glm::mat4> transformQueue;
 
+	// 변환 기준이 되는 부모 모델 (nullptr이면 적용 X)
+	Model* parent = nullptr;
+
 	GLuint VAO, VBO, EBO, COLOR;
 
 	// 비활성 상태에선 동작 X
 	bool enabled = true;
 public:
 	Model(const std::string& filename, const glm::vec3& size = { 1.0f, 1.0f, 1.0f }, const glm::vec3& defColor = { 0.8f, 0.8f, 0.8f });
+
+	void setParent(Model* parent);
 
 	void setDefScale(const glm::vec3& ds);
 	void setDefRotate(const glm::mat4& dr);
@@ -60,6 +65,7 @@ public:
 	void resetModelMatrix();
 	glm::vec3 retDistTo(const glm::vec3& origin = { 0.0f, 0.0f, 0.0f });
 	glm::mat4 getModelMatrix();
+	glm::vec3 retCenter() const { return center; }
 
 	void setEnabled(bool state) { enabled = state; }
 	
