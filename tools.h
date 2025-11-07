@@ -55,7 +55,7 @@ public:
 	void translate(const glm::vec3& delta);
 
 	void Render();
-	void resetModelMatrix() { modelMatrix = glm::mat4(1.0f); }
+	void resetModelMatrix();
 	glm::vec3 retDistTo(const glm::vec3& origin = { 0.0f, 0.0f, 0.0f });
 	glm::mat4 getModelMatrix();
 

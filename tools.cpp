@@ -92,6 +92,19 @@ void Model::translate(const glm::vec3& delta) {
 	if (enabled) transformQueue.push(glm::translate(glm::mat4(1.0f), delta));
 }
 
+void Model::Render() {
+	if (!enabled) return;
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, 0);
+
+	//basis->Render();
+}
+
+glm::vec3 Model::retDistTo(const glm::vec3& origin) {
+	glm::vec4 worldLocation = modelMatrix * default_translate * default_rotate * default_scale * glm::vec4(center, 1.0f);
+	return glm::vec3(worldLocation) - origin;
+}
+
 glm::mat4 Model::getModelMatrix() {
 	while (!transformQueue.empty()) {
 		modelMatrix = transformQueue.front() * modelMatrix;
@@ -100,17 +113,11 @@ glm::mat4 Model::getModelMatrix() {
 	return modelMatrix * default_translate * default_rotate * default_scale;
 }
 
-glm::vec3 Model::retDistTo(const glm::vec3& origin) {
-	glm::vec4 worldLocation = modelMatrix * default_translate * default_rotate * default_scale * glm::vec4(center, 1.0f);
-	return glm::vec3(worldLocation) - origin;
-}
-
-void Model::Render() {
-	if (!enabled) return;
-	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, 0);
-
-	//basis->Render();
+void Model::resetModelMatrix() {
+	modelMatrix = glm::mat4(1.0f);
+	for (int i = 0; i < transformQueue.size(); i++) {
+		transformQueue.pop();
+	}
 }
 
 DisplayBasis::DisplayBasis(GLfloat offset, const glm::vec3& origin) : origin(origin) {

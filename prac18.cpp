@@ -121,7 +121,7 @@ GLvoid drawScene()
 	glUniform3f(glGetUniformLocation(shaderProgramID, "color_set"), 0.8f, 0.8f, 0.8f);
 
 	for (int i = 0; i < 2; i++) {
-		if (model_list[page][i] != nullptr) {
+		if (model_list[page][i]) {
 			glm::mat4 scale_origin = glm::mat4(1.0f);
 			if (selectedModel == i || selectedModel == 2) {
 				if (!move_to_other_direct && !move_to_other_around) {
@@ -179,8 +179,8 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			for (int j = 0; j < 2; j++) {
 				model_list[i][j]->setEnabled(true);
 				model_list[i][j]->resetModelMatrix();
-				model_list[i][j]->translate({ 1.0f * j == 0 ? 1 : -1, 0.0, 0.0 });
-				if (i == 1)	model_list[i][j]->setEnabled(false);
+				model_list[i][j]->translate({ j == 0 ? 1.0f : -1.0f, 0.0, 0.0 });
+				model_list[i][j]->setEnabled(i == 0);
 			}
 		}
 		m_rotationX = 0.0f, m_rotationY = 0.0f;
@@ -232,13 +232,21 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'a':
 		if (scale_model.x < 2.0f)
 			scale_model += delta_scale;
-		if (model_list[page][selectedModel] != nullptr)
+		if (selectedModel == 2) {
+			if (model_list[page][0]) model_list[page][0]->setDefScale(scale_model);
+			if (model_list[page][1]) model_list[page][1]->setDefScale(scale_model);
+		}
+		else if (model_list[page][selectedModel])
 			model_list[page][selectedModel]->setDefScale(scale_model);
 		break;
 	case 'A':
 		if (scale_model.x > 0.4f)
 			scale_model -= delta_scale;
-		if (model_list[page][selectedModel] != nullptr)
+		if (selectedModel == 2) {
+			if (model_list[page][0]) model_list[page][0]->setDefScale(scale_model);
+			if (model_list[page][1]) model_list[page][1]->setDefScale(scale_model);
+		}
+		else if (model_list[page][selectedModel])
 			model_list[page][selectedModel]->setDefScale(scale_model);
 		break;
 	case 'b':
