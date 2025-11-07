@@ -62,15 +62,17 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	XYZ = new DisplayBasis(1.2f);
 	model_list[0][0] = new Model("Models/test.obj", {0.2f, 0.2f, 0.2f});
 	model_list[0][1] = new Model("Models/Pistol.obj", { 0.0002f, 0.0002f, 0.0002f });
-	model_list[1][0] = new Model("Models/K1.obj", { 0.02f, 0.02f, 0.02f });
-	// model_list[1][1] = new Model("Models/Knife.obj");
+	model_list[1][0] = new Model("Models/K1.obj", { 0.002f, 0.002f, 0.002f });
+	model_list[1][1] = new Model("Models/Knife.obj", { 0.2f, 0.2f, 0.2f });
 
 	model_list[0][0]->translate({ 1.0, 0.0, 0.0 });
-
 	model_list[0][1]->translate({ -1.0, 0.0, 0.0 });
 
+	model_list[1][0]->translate({ 1.0, 0.0, 0.0 });
+	model_list[1][1]->translate({ -1.0, 0.0, 0.0 });
+
 	model_list[1][0]->setEnabled(false);
-	// model_list[1][1]->setEnabled(false);
+	model_list[1][1]->setEnabled(false);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
@@ -162,6 +164,14 @@ GLvoid MouseMotion(int x, int y)
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
+	case 'c':
+		model_list[page][0]->setEnabled(false);
+		model_list[page][1]->setEnabled(false);
+		page = (page + 1) % 2;
+
+		model_list[page][0]->setEnabled(true);
+		model_list[page][1]->setEnabled(true);
+		break;
 	case '1': case '2': case '3':
 		selectedModel = key - '1';
 		break;
