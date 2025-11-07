@@ -17,6 +17,49 @@ GLvoid Keyboard(unsigned char key, int x, int y);
 GLvoid MouseMotion(int x, int y);
 GLvoid TimerFunc(int value);
 
+class Orbit {
+	glm::vec3 center;
+	GLfloat radius;
+	GLfloat angleStep;
+
+	std::vector<ColoredVertex> orbitPoints;
+
+	GLuint VAO, VBO;
+public:
+	Orbit(const GLfloat radius, const glm::vec3& color) : radius(radius) {
+		center = glm::vec3(0.0f, 0.0f, 0.0f);
+		angleStep = 5.0f; // 5도 간격
+
+		for (GLfloat angle = 0.0f; angle < 360.0f; angle += angleStep) {
+			GLfloat rad = glm::radians(angle);
+			GLfloat x = center.x + radius * cos(rad);
+			GLfloat z = center.z + radius * sin(rad);
+
+			ColoredVertex point;
+			point.pos = glm::vec3(x, 0.0f, z);
+			point.color = color;
+
+			orbitPoints.push_back(point);
+		}
+
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, orbitPoints.size() * sizeof(ColoredVertex), orbitPoints.data(), GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)sizeof(glm::vec3));
+		glEnableVertexAttribArray(1);
+	}
+
+	void Render() {
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_LINE_LOOP, 0, orbitPoints.size());
+	}
+};
+
 //--- 필요한 변수 선언
 GLint winWidth = 600, winHeight = 600;
 GLuint shaderProgramID; //--- 세이더 프로그램 이름
@@ -24,6 +67,8 @@ GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
 Model* sun, *planet[3], *moon[3];
+Orbit* orbit_sun[3];
+Orbit* orbit_planet[3];
 DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
@@ -63,10 +108,12 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 		planet[i]->setParent(sun);
 		planet[i]->translate(glm::vec3(orbit_radius_sun + i, 0.0f, 0.0f));
 		planet[i]->rotate(120.0f * i, glm::vec3(0.0f, 1.0f, 0.0f));
+		orbit_sun[i] = new Orbit(orbit_radius_sun + i, glm::vec3(0.2f, 0.5f, 0.2f));
 
 		moon[i] = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 0.0f, 0.0f));
 		moon[i]->setParent(planet[i]);
 		moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
+		orbit_planet[i] = new Orbit(orbit_radius_planet, glm::vec3(0.0f, 0.5f, 0.5f));
 	}
 
 	glutDisplayFunc(drawScene);
@@ -100,8 +147,12 @@ GLvoid drawScene()
 
 	sun->Render();
 	for (int i = 0; i < 3; i++) {
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
+		orbit_sun[i]->Render();
+
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(planet[i]->getModelMatrix()));
 		planet[i]->Render();
+		orbit_planet[i]->Render();
 
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(moon[i]->getModelMatrix()));
 		moon[i]->Render();
