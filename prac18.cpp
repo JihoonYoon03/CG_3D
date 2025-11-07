@@ -33,8 +33,8 @@ GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 glm::vec3 model1_startPos = { 0.0f, 0.0f, 0.0f }, model2_startPos = { 0.0f, 0.0f, 0.0f };
 glm::vec3 model1_targetPos = { 0.0f, 0.0f, 0.0f }, model2_targetPos = { 0.0f, 0.0f, 0.0f };
 glm::vec3 model1_middlePos = { 0.0f, 0.0f, 0.0f }, model2_middlePos = { 0.0f, 0.0f, 0.0f };
-glm::vec3 scale_model = { 1.0f, 1.0f, 1.0f };
-glm::vec3 scale_from_origin = { 1.0f, 1.0f, 1.0f };
+glm::vec3 scale_model[2][2] = { {{ 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }}, {{ 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }} };
+glm::vec3 scale_from_origin[2][2] = { {{ 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }}, {{ 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }} };
 
 // 수치 변화량
 GLfloat delta_spinX = 0.0f, delta_spinY = 0.0f, delta_orbitY = 0.0f, delta_translateX = 0.0f, delta_translateY = 0.0f, delta_scale = 0.2f;
@@ -137,9 +137,9 @@ GLvoid drawScene()
 
 					// 원점 기준 변환 구간
 					model_list[page][i]->rotate(delta_orbitY, glm::vec3(0.0f, 1.0f, 0.0f));
-					scale_origin = glm::scale(scale_origin, scale_from_origin);
 				}
 			}
+			scale_origin = glm::scale(scale_origin, scale_from_origin[page][i]);
 
 			glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(scale_origin * model_list[page][i]->getModelMatrix()));
 			model_list[page][i]->Render();
@@ -179,7 +179,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			for (int j = 0; j < 2; j++) {
 				model_list[i][j]->setEnabled(true);
 				model_list[i][j]->resetModelMatrix();
+				scale_from_origin[i][j] = { 1.0f, 1.0f, 1.0f };
+				
+				scale_model[i][j] = { 1.0f, 1.0f, 1.0f };
+				model_list[i][j]->setDefScale(scale_model[i][j]);
 				model_list[i][j]->translate({ j == 0 ? 1.0f : -1.0f, 0.0, 0.0 });
+
 				model_list[i][j]->setEnabled(i == 0);
 			}
 		}
@@ -187,9 +192,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		model1_startPos = { 0.0f, 0.0f, 0.0f }, model2_startPos = { 0.0f, 0.0f, 0.0f };
 		model1_targetPos = { 0.0f, 0.0f, 0.0f }, model2_targetPos = { 0.0f, 0.0f, 0.0f };
 		model1_middlePos = { 0.0f, 0.0f, 0.0f }, model2_middlePos = { 0.0f, 0.0f, 0.0f };
-		scale_model = { 1.0f, 1.0f, 1.0f };
-		scale_from_origin = { 1.0f, 1.0f, 1.0f };
-		
+
 		delta_spinX = 0.0f, delta_spinY = 0.0f, delta_orbitY = 0.0f, delta_translateX = 0.0f, delta_translateY = 0.0f;
 		delta_model2to1 = { 0.0f, 0.0f, 0.0f }, delta_model1to2 = { 0.0f, 0.0f, 0.0f };
 
@@ -202,8 +205,6 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		model_list[page][1]->setEnabled(false);
 		page = (page + 1) % 2;
 		delta_spinX = 0.0f, delta_spinY = 0.0f, delta_orbitY = 0.0f, delta_translateX = 0.0f, delta_translateY = 0.0f;
-		scale_model = { 1.0f, 1.0f, 1.0f };
-		scale_from_origin = { 1.0f, 1.0f, 1.0f };
 
 		model_list[page][0]->setEnabled(true);
 		model_list[page][1]->setEnabled(true);
@@ -230,33 +231,46 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			delta_orbitY = 0.0f;
 		break;
 	case 'a':
-		if (scale_model.x < 2.0f)
-			scale_model += delta_scale;
 		if (selectedModel == 2) {
-			if (model_list[page][0]) model_list[page][0]->setDefScale(scale_model);
-			if (model_list[page][1]) model_list[page][1]->setDefScale(scale_model);
+			if (scale_model[page][0].x < 2.0f) scale_model[page][0] += delta_scale;
+			if (scale_model[page][1].x < 2.0f) scale_model[page][1] += delta_scale;
 		}
-		else if (model_list[page][selectedModel])
-			model_list[page][selectedModel]->setDefScale(scale_model);
+		else {
+			if (scale_model[page][selectedModel].x < 2.0f) scale_model[page][selectedModel] += delta_scale;
+		}
+		
+		if (model_list[page][0]) model_list[page][0]->setDefScale(scale_model[page][0]);
+		if (model_list[page][1]) model_list[page][1]->setDefScale(scale_model[page][1]);
 		break;
 	case 'A':
-		if (scale_model.x > 0.4f)
-			scale_model -= delta_scale;
 		if (selectedModel == 2) {
-			if (model_list[page][0]) model_list[page][0]->setDefScale(scale_model);
-			if (model_list[page][1]) model_list[page][1]->setDefScale(scale_model);
+			if (scale_model[page][0].x > 0.4f) scale_model[page][0] -= delta_scale;
+			if (scale_model[page][1].x > 0.4f) scale_model[page][1] -= delta_scale;
 		}
-		else if (model_list[page][selectedModel])
-			model_list[page][selectedModel]->setDefScale(scale_model);
+		else {
+			if (scale_model[page][selectedModel].x > 0.4f) scale_model[page][selectedModel] -= delta_scale;
+		}
+
+		if (model_list[page][0]) model_list[page][0]->setDefScale(scale_model[page][0]);
+		if (model_list[page][1]) model_list[page][1]->setDefScale(scale_model[page][1]);
 		break;
 	case 'b':
-		if (scale_from_origin.x < 2.0f) {
-			scale_from_origin += delta_scale;
+		if (selectedModel == 2) {
+			if (scale_from_origin[page][0].x < 2.0f) scale_from_origin[page][0] += delta_scale;
+			if (scale_from_origin[page][1].x < 2.0f) scale_from_origin[page][1] += delta_scale;
+		}
+		else {
+			if (scale_from_origin[page][selectedModel].x < 2.0f) scale_from_origin[page][selectedModel] += delta_scale;
 		}
 		break;
 	case 'B':
-		if (scale_from_origin.x > 0.4f)
-			scale_from_origin -= delta_scale;
+		if (selectedModel == 2) {
+			if (scale_from_origin[page][0].x > 0.4f) scale_from_origin[page][0] -= delta_scale;
+			if (scale_from_origin[page][1].x > 0.4f) scale_from_origin[page][1] -= delta_scale;
+		}
+		else {
+			if (scale_from_origin[page][selectedModel].x > 0.4f) scale_from_origin[page][selectedModel] -= delta_scale;
+		}
 		break;
 	case 'd': case 'D':
 		if (delta_translateX == 0)
@@ -297,6 +311,8 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		move_check = false;
 		move_to_other_around = true;
 		swap_frame = 0;
+		break;
+	case 'v':
 		break;
 	case 'm':
 		if (cursorEnabled) {
