@@ -32,6 +32,7 @@ glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 glm::vec3 model1_startPos = { 0.0f, 0.0f, 0.0f }, model2_startPos = { 0.0f, 0.0f, 0.0f };
 glm::vec3 model1_targetPos = { 0.0f, 0.0f, 0.0f }, model2_targetPos = { 0.0f, 0.0f, 0.0f };
+glm::vec3 model1_middlePos = { 0.0f, 0.0f, 0.0f }, model2_middlePos = { 0.0f, 0.0f, 0.0f };
 glm::vec3 scale_model = { 1.0f, 1.0f, 1.0f };
 glm::vec3 scale_from_origin = { 1.0f, 1.0f, 1.0f };
 
@@ -40,7 +41,7 @@ GLfloat delta_spinX = 0.0f, delta_spinY = 0.0f, delta_orbitY = 0.0f, delta_trans
 glm::vec3 delta_model2to1 = { 0.0f, 0.0f, 0.0f }, delta_model1to2 = { 0.0f, 0.0f, 0.0f };
 
 int selectedModel = 0;
-bool cursorEnabled = false, move_to_other_direct = false, move_to_other_around = false;
+bool cursorEnabled = false, move_to_other_direct = false, move_to_other_around = false, move_check = false;
 unsigned int page = 0;
 int swap_frame = 0;
 const int SWAP_DURATION = 60;
@@ -172,6 +173,30 @@ GLvoid MouseMotion(int x, int y)
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
+	case 's':
+		page = 0;
+		for (int i = 0; i < 2; i++) {
+			for (int j = 0; j < 2; j++) {
+				model_list[i][j]->setEnabled(true);
+				model_list[i][j]->resetModelMatrix();
+				model_list[i][j]->translate({ 1.0f * j == 0 ? 1 : -1, 0.0, 0.0 });
+				if (i == 1)	model_list[i][j]->setEnabled(false);
+			}
+		}
+		m_rotationX = 0.0f, m_rotationY = 0.0f;
+		model1_startPos = { 0.0f, 0.0f, 0.0f }, model2_startPos = { 0.0f, 0.0f, 0.0f };
+		model1_targetPos = { 0.0f, 0.0f, 0.0f }, model2_targetPos = { 0.0f, 0.0f, 0.0f };
+		model1_middlePos = { 0.0f, 0.0f, 0.0f }, model2_middlePos = { 0.0f, 0.0f, 0.0f };
+		scale_model = { 1.0f, 1.0f, 1.0f };
+		scale_from_origin = { 1.0f, 1.0f, 1.0f };
+		
+		delta_spinX = 0.0f, delta_spinY = 0.0f, delta_orbitY = 0.0f, delta_translateX = 0.0f, delta_translateY = 0.0f;
+		delta_model2to1 = { 0.0f, 0.0f, 0.0f }, delta_model1to2 = { 0.0f, 0.0f, 0.0f };
+
+		selectedModel = 0;
+		cursorEnabled = false, move_to_other_direct = false, move_to_other_around = false, move_check = false;
+		swap_frame = 0;
+		break;
 	case 'c':
 		model_list[page][0]->setEnabled(false);
 		model_list[page][1]->setEnabled(false);
@@ -238,6 +263,8 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			delta_translateY = 0.0f;
 		break;
 	case 't':
+		if (move_to_other_around) break;
+
 		model1_startPos = model_list[page][0]->retDistTo();
 		model2_startPos = model_list[page][1]->retDistTo();
 
@@ -248,12 +275,18 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		swap_frame = 0;
 		break;
 	case 'u':
+		if (move_to_other_direct) break;
+
 		model1_startPos = model_list[page][0]->retDistTo();
 		model2_startPos = model_list[page][1]->retDistTo();
 
 		model1_targetPos = model2_startPos;
 		model2_targetPos = model1_startPos;
 
+		model1_middlePos = { 0.0f, 1.0f, 0.0f };
+		model2_middlePos = { 0.0f, -1.0f, 0.0f };
+
+		move_check = false;
 		move_to_other_around = true;
 		swap_frame = 0;
 		break;
@@ -301,7 +334,46 @@ GLvoid TimerFunc(int value)
 		model_list[page][1]->translate(delta2);
 	}
 	else if (move_to_other_around) {
-		move_to_other_around = false;
+		swap_frame++;
+
+		// 프레임에 따른 매개변수 t 계산
+		float t = static_cast<float>(swap_frame) / static_cast<float>(SWAP_DURATION);
+
+		if (t >= 1.0f) {
+			t = 1.0f;
+
+			if (move_check) {
+				// 마지막 지점 도달
+				swap_frame = 0;
+				move_to_other_around = false;
+			}
+			else {
+				// 중간 지점 도달
+				t = 0.0f;
+				move_check = true;
+				swap_frame = 0;
+			}
+		}
+
+		glm::vec3 model1_currentPos = model_list[page][0]->retDistTo();
+		glm::vec3 model2_currentPos = model_list[page][1]->retDistTo();
+
+		glm::vec3 model1_newPos, model2_newPos;
+
+		if (move_check) {
+			model1_newPos = glm::mix(model1_middlePos, model1_targetPos, t);
+			model2_newPos = glm::mix(model2_middlePos, model2_targetPos, t);
+		}
+		else {
+			model1_newPos = glm::mix(model1_startPos, model1_middlePos, t);
+			model2_newPos = glm::mix(model2_startPos, model2_middlePos, t);
+		}
+
+		glm::vec3 delta1 = model1_newPos - model1_currentPos;
+		glm::vec3 delta2 = model2_newPos - model2_currentPos;
+
+		model_list[page][0]->translate(delta1);
+		model_list[page][1]->translate(delta2);
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
