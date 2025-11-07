@@ -65,6 +65,9 @@
     <ClCompile Include="prac16.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="prac19.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tools.h">
