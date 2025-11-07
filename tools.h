@@ -29,6 +29,8 @@ class Model {
 	glm::vec3 center;
 	DisplayBasis* basis;
 
+	std::vector<glm::vec3>* color;
+
 	// 변환행렬 적용 이전에 SRT순으로 모델 변환
 	glm::mat4 default_scale = glm::mat4(1.0f);
 	glm::mat4 default_rotate = glm::mat4(1.0f);
@@ -39,12 +41,12 @@ class Model {
 	// modelMatrix에 적용할 변환 행렬 큐
 	std::queue<glm::mat4> transformQueue;
 
-	GLuint VAO, VBO, EBO;
+	GLuint VAO, VBO, EBO, COLOR;
 
 	// 비활성 상태에선 동작 X
 	bool enabled = true;
 public:
-	Model(const std::string& filename, const glm::vec3& size = { 1.0f, 1.0f, 1.0f });
+	Model(const std::string& filename, const glm::vec3& size = { 1.0f, 1.0f, 1.0f }, const glm::vec3& defColor = { 0.8f, 0.8f, 0.8f });
 
 	void setDefScale(const glm::vec3& ds);
 	void setDefRotate(const glm::mat4& dr);
@@ -61,7 +63,7 @@ public:
 
 	void setEnabled(bool state) { enabled = state; }
 	
-	~Model() { delete basis; }
+	~Model();
 };
 
 class DisplayBasis {

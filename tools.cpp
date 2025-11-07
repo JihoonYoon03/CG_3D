@@ -1,6 +1,6 @@
 #include "tools.h"
 
-Model::Model(const std::string& filename, const glm::vec3& size) {
+Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3& defColor) {
 	std::ifstream file(filename);
 	if (!file.is_open()) {
 		std::cerr << "Error opening file: " << filename << std::endl;
@@ -50,9 +50,12 @@ Model::Model(const std::string& filename, const glm::vec3& size) {
 
 	center = (min_pos + max_pos) * 0.5f;
 
+	color = new std::vector<glm::vec3>(vertices.size(), defColor);
+
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
+	glGenBuffers(1, &COLOR);
 
 	glBindVertexArray(VAO);
 
@@ -66,6 +69,12 @@ Model::Model(const std::string& filename, const glm::vec3& size) {
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, COLOR);
+	glBufferData(GL_ARRAY_BUFFER, color->size() * sizeof(glm::vec3), color->data(), GL_STATIC_DRAW);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
 
 	basis = new DisplayBasis(0.2f, center);
 }
@@ -115,9 +124,14 @@ glm::mat4 Model::getModelMatrix() {
 
 void Model::resetModelMatrix() {
 	modelMatrix = glm::mat4(1.0f);
-	for (int i = 0; i < transformQueue.size(); i++) {
+	for (int i = 0; !transformQueue.empty(); i++) {
 		transformQueue.pop();
 	}
+}
+
+Model::~Model() {
+	delete color;
+	delete basis;
 }
 
 DisplayBasis::DisplayBasis(GLfloat offset, const glm::vec3& origin) : origin(origin) {

@@ -68,9 +68,9 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 
 	// 데이터 초기화
 	XYZ = new DisplayBasis(1.2f);
-	model_list[0][0] = new Model("Models/test.obj", {0.2f, 0.2f, 0.2f});
+	model_list[0][0] = new Model("Models/test.obj", {0.2f, 0.2f, 0.2f}, {1.0f, 1.0f, 0.0f});
 	model_list[0][1] = new Model("Models/Pistol.obj", { 0.0002f, 0.0002f, 0.0002f });
-	model_list[1][0] = new Model("Models/K1.obj", { 0.002f, 0.002f, 0.002f });
+	model_list[1][0] = new Model("Models/K1.obj", { 0.002f, 0.002f, 0.002f }, { 1.0f, 1.0f, 0.0f });
 	model_list[1][1] = new Model("Models/Knife.obj", { 0.2f, 0.2f, 0.2f });
 
 	model_list[0][0]->translate({ 1.0, 0.0, 0.0 });
@@ -111,16 +111,9 @@ GLvoid drawScene()
 		world = glm::rotate(world, glm::radians(m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "world"), 1, GL_FALSE, glm::value_ptr(world));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
-
-	glUniform1i(glGetUniformLocation(shaderProgramID, "use_color_set"), false);
-	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), true);
 	XYZ->Render();
-	glUniform1i(glGetUniformLocation(shaderProgramID, "isBasis"), false);
-
-
-	glUniform1i(glGetUniformLocation(shaderProgramID, "use_color_set"), true);
-	glUniform3f(glGetUniformLocation(shaderProgramID, "color_set"), 0.8f, 0.8f, 0.8f);
 
 	for (int i = 0; i < 2; i++) {
 		if (model_list[page][i]) {
