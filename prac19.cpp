@@ -25,6 +25,7 @@ class Orbit {
 	glm::mat4 scale_mat = glm::mat4(1.0f);
 	glm::mat4 rotation_mat = glm::mat4(1.0f);
 	glm::mat4 translation_mat = glm::mat4(1.0f);
+	glm::mat4 model_mat = glm::mat4(1.0f);
 	std::vector<ColoredVertex> orbitPoints;
 
 	Model* parent = nullptr;
@@ -75,11 +76,15 @@ public:
 		translation_mat = glm::translate(glm::mat4(1.0f), translateFactor);
 	}
 
+	void rotate(GLfloat angle, const glm::vec3& axis) {
+		model_mat = glm::rotate(model_mat, glm::radians(angle), axis);
+	}
+
 	glm::mat4 getModelMatrix() {
 		glm::mat4 parentMatrix = glm::mat4(1.0f);
 		if (parent != nullptr) parentMatrix = parent->getModelMatrix();
 
-		return parentMatrix * translation_mat * rotation_mat * scale_mat;
+		return parentMatrix * model_mat * translation_mat * rotation_mat * scale_mat;
 	}
 
 	void Render() {
@@ -104,12 +109,14 @@ glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 // 변환 수치
 GLfloat orbit_radius_sun = 2.0f, orbit_radius_planet = 0.8f;
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
+GLfloat z_rotate = 0.0f;
 
 // 수치 변화량
 GLfloat planet_speed[3];
 GLfloat moon_speed[3];
 glm::vec3 sun_translate(0.0f, 0.0f, 0.0f);
-bool isOrtho = false, isWire = false, zRotate = false;
+GLfloat z_rotate_speed = 0.0f;
+bool isOrtho = false, isWire = false;
 char lastScaleKey = ' ';
 
 //--- 메인 함수
@@ -196,16 +203,23 @@ GLvoid drawScene()
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(sun->getModelMatrix()));
 	sun->Render();
 	for (int i = 0; i < 3; i++) {
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(orbit_sun[i]->getModelMatrix()));
+		// sun->rotate(z_rotate_speed, glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 z_rot = glm::rotate(glm::mat4(1.0f), glm::radians(z_rotate), glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 model_mat = orbit_sun[i]->getModelMatrix();
+
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot * model_mat));
 		orbit_sun[i]->Render();
 
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(planet[i]->getModelMatrix()));
+		model_mat = planet[i]->getModelMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot * model_mat));
 		planet[i]->Render();
 
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(orbit_planet[i]->getModelMatrix()));
+		model_mat = orbit_planet[i]->getModelMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot * model_mat));
 		orbit_planet[i]->Render();
 
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(moon[i]->getModelMatrix()));
+		model_mat = moon[i]->getModelMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot * model_mat));
 		moon[i]->Render();
 	}
 
@@ -285,8 +299,19 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			lastScaleKey = ' ';
 		}
 		break;
-	case 'z': case 'Z':
-		// 중심 제외 z축 회전
+	case 'z':
+		// z축 +회전
+		if (z_rotate_speed <= 0.0f)
+			z_rotate_speed = 1.0f;
+		else
+			z_rotate_speed = 0.0f;
+		break;
+	case 'Z':
+		// z축 -회전
+		if (z_rotate_speed >= 0.0f)
+			z_rotate_speed = -1.0f;
+		else
+			z_rotate_speed = 0.0f;
 		break;
 	case 'l':
 		break;
@@ -323,6 +348,8 @@ GLvoid KeyboardUp(unsigned char key, int x, int y)
 GLvoid TimerFunc(int value)
 {
 	sun->translate(sun_translate);
+	z_rotate += z_rotate_speed;
+
 	for (int i = 0; i < 3; i++) {
 		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
 		planet[i]->rotate(-offset, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -330,6 +357,7 @@ GLvoid TimerFunc(int value)
 		planet[i]->rotate(offset, glm::vec3(0.0f, 0.0f, 1.0f));
 
 		moon[i]->rotate(moon_speed[i], glm::vec3(0.0f, 1.0f, 0.0f));
+
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
