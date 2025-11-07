@@ -96,7 +96,7 @@ GLfloat orbit_radius_sun = 2.0f, orbit_radius_planet = 0.8f;
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 
 // 수치 변화량
-bool cursorEnabled = false;
+bool isOrtho = false, isWire = false, zRotate = false;
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -156,10 +156,12 @@ GLvoid drawScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
+	glm::mat4 projection;
+	if (isOrtho) projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
+	else projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 15.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 world = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -199,6 +201,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	switch (key) {
 	case 'p': case 'P':
 		// 직각/원근 투영
+		isOrtho = key == 'p' ? true : false;
 		break;
 	case 'm': case 'M':
 		// 솔리드/와이어
