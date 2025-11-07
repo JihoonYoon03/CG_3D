@@ -19,21 +19,23 @@ GLvoid TimerFunc(int value);
 
 class Orbit {
 	glm::vec3 center;
-	GLfloat radius;
 	GLfloat angleStep;
 
+	glm::mat4 scale_mat = glm::mat4(1.0f);
+	glm::mat4 rotation_mat = glm::mat4(1.0f);
+	glm::mat4 translation_mat = glm::mat4(1.0f);
 	std::vector<ColoredVertex> orbitPoints;
 
 	GLuint VAO, VBO;
 public:
-	Orbit(const GLfloat radius, const glm::vec3& color) : radius(radius) {
+	Orbit(const glm::vec3& color){
 		center = glm::vec3(0.0f, 0.0f, 0.0f);
 		angleStep = 5.0f; // 5도 간격
 
 		for (GLfloat angle = 0.0f; angle < 360.0f; angle += angleStep) {
 			GLfloat rad = glm::radians(angle);
-			GLfloat x = center.x + radius * cos(rad);
-			GLfloat z = center.z + radius * sin(rad);
+			GLfloat x = center.x + 1.0f * cos(rad);
+			GLfloat z = center.z + 1.0f * sin(rad);
 
 			ColoredVertex point;
 			point.pos = glm::vec3(x, 0.0f, z);
@@ -52,6 +54,22 @@ public:
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)sizeof(glm::vec3));
 		glEnableVertexAttribArray(1);
+	}
+
+	void scale(glm::vec3 scaleFactor) {
+		scale_mat = glm::scale(glm::mat4(1.0f), scaleFactor);
+	}
+
+	void rotate(glm::mat4 rotationFactor) {
+		rotation_mat = rotationFactor;
+	}
+
+	void translate(glm::vec3 translateFactor) {
+		translation_mat = glm::translate(glm::mat4(1.0f), translateFactor);
+	}
+
+	glm::mat4 getModelMatrix() {
+		return translation_mat * rotation_mat * scale_mat;
 	}
 
 	void Render() {
@@ -104,16 +122,24 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	XYZ = new DisplayBasis(2.0f);
 	sun = new Model("Models/Sphere.obj", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	for (int i = 0; i < 3; i++) {
+		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
 		planet[i] = new Model("Models/Sphere.obj", glm::vec3(0.3f, 0.3f, 0.3f), glm::vec3(0.0f, 1.0f, 0.0f));
 		planet[i]->setParent(sun);
 		planet[i]->translate(glm::vec3(orbit_radius_sun + i, 0.0f, 0.0f));
 		planet[i]->rotate(120.0f * i, glm::vec3(0.0f, 1.0f, 0.0f));
-		orbit_sun[i] = new Orbit(orbit_radius_sun + i, glm::vec3(0.2f, 0.5f, 0.2f));
+		planet[i]->rotate(offset, glm::vec3(0.0f, 0.0f, 1.0f));
+
+		orbit_sun[i] = new Orbit(glm::vec3(0.2f, 0.5f, 0.2f));
+		orbit_sun[i]->scale(glm::vec3(orbit_radius_sun + i, 1.0f, orbit_radius_sun + i));
+		orbit_sun[i]->rotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
 
 		moon[i] = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 0.0f, 0.0f));
 		moon[i]->setParent(planet[i]);
 		moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
-		orbit_planet[i] = new Orbit(orbit_radius_planet, glm::vec3(0.0f, 0.5f, 0.5f));
+
+		orbit_planet[i] = new Orbit(glm::vec3(0.0f, 0.5f, 0.5f));
+		orbit_planet[i]->scale(glm::vec3(orbit_radius_planet, 1.0f, orbit_radius_planet));
+		orbit_planet[i]->rotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
 	}
 
 	glutDisplayFunc(drawScene);
@@ -147,7 +173,7 @@ GLvoid drawScene()
 
 	sun->Render();
 	for (int i = 0; i < 3; i++) {
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(orbit_sun[i]->getModelMatrix()));
 		orbit_sun[i]->Render();
 
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(planet[i]->getModelMatrix()));
