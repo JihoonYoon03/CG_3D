@@ -28,17 +28,22 @@ DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 
-// 변환량
+// 변환 수치
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
+glm::vec3 model1_startPos = { 0.0f, 0.0f, 0.0f }, model2_startPos = { 0.0f, 0.0f, 0.0f };
+glm::vec3 model1_targetPos = { 0.0f, 0.0f, 0.0f }, model2_targetPos = { 0.0f, 0.0f, 0.0f };
 glm::vec3 scale_model = { 1.0f, 1.0f, 1.0f };
 glm::vec3 scale_from_origin = { 1.0f, 1.0f, 1.0f };
 
-// 변환 변화량
+// 수치 변화량
 GLfloat delta_spinX = 0.0f, delta_spinY = 0.0f, delta_orbitY = 0.0f, delta_translateX = 0.0f, delta_translateY = 0.0f, delta_scale = 0.2f;
+glm::vec3 delta_model2to1 = { 0.0f, 0.0f, 0.0f }, delta_model1to2 = { 0.0f, 0.0f, 0.0f };
 
 int selectedModel = 0;
-bool cursorEnabled = false;
+bool cursorEnabled = false, move_to_other_direct = false, move_to_other_around = false;
 unsigned int page = 0;
+int swap_frame = 0;
+const int SWAP_DURATION = 60;
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -118,18 +123,21 @@ GLvoid drawScene()
 		if (model_list[page][i] != nullptr) {
 			glm::mat4 scale_origin = glm::mat4(1.0f);
 			if (selectedModel == i || selectedModel == 2) {
-				glm::vec3 current_pos = model_list[page][i]->retDistTo();
+				if (!move_to_other_direct && !move_to_other_around) {
 
-				// 모델 기준 변환 구간
-				model_list[page][i]->translate(current_pos * -1.0f);
-				model_list[page][i]->rotate(delta_spinX, glm::vec3(1.0f, 0.0f, 0.0f));
-				model_list[page][i]->rotate(delta_spinY, glm::vec3(0.0f, 1.0f, 0.0f));
-				model_list[page][i]->translate({ delta_translateX, delta_translateY, 0.0f });
-				model_list[page][i]->translate(current_pos);
+					glm::vec3 current_pos = model_list[page][i]->retDistTo();
 
-				// 원점 기준 변환 구간
-				model_list[page][i]->rotate(delta_orbitY, glm::vec3(0.0f, 1.0f, 0.0f));
-				scale_origin = glm::scale(scale_origin, scale_from_origin);
+					// 모델 기준 변환 구간
+					model_list[page][i]->translate(current_pos * -1.0f);
+					model_list[page][i]->rotate(delta_spinX, glm::vec3(1.0f, 0.0f, 0.0f));
+					model_list[page][i]->rotate(delta_spinY, glm::vec3(0.0f, 1.0f, 0.0f));
+					model_list[page][i]->translate({ delta_translateX, delta_translateY, 0.0f });
+					model_list[page][i]->translate(current_pos);
+
+					// 원점 기준 변환 구간
+					model_list[page][i]->rotate(delta_orbitY, glm::vec3(0.0f, 1.0f, 0.0f));
+					scale_origin = glm::scale(scale_origin, scale_from_origin);
+				}
 			}
 
 			glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(scale_origin * model_list[page][i]->getModelMatrix()));
@@ -155,8 +163,8 @@ GLvoid MouseMotion(int x, int y)
 	m_rotationX += (x - winWidth / 2) * 0.2f;
 	m_rotationY += (y - winHeight / 2) * 0.2f;
 
-	if (m_rotationY > 89.0f) m_rotationY = 89.0f;
-	if (m_rotationY < -89.0f) m_rotationY = -89.0f;
+	if (m_rotationY > 59.0f) m_rotationY = 59.0f;
+	if (m_rotationY < -119.0f) m_rotationY = -119.0f;
 
 	glutWarpPointer(winWidth / 2, winHeight / 2);
 }
@@ -168,6 +176,9 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		model_list[page][0]->setEnabled(false);
 		model_list[page][1]->setEnabled(false);
 		page = (page + 1) % 2;
+		delta_spinX = 0.0f, delta_spinY = 0.0f, delta_orbitY = 0.0f, delta_translateX = 0.0f, delta_translateY = 0.0f;
+		scale_model = { 1.0f, 1.0f, 1.0f };
+		scale_from_origin = { 1.0f, 1.0f, 1.0f };
 
 		model_list[page][0]->setEnabled(true);
 		model_list[page][1]->setEnabled(true);
@@ -226,6 +237,26 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		else
 			delta_translateY = 0.0f;
 		break;
+	case 't':
+		model1_startPos = model_list[page][0]->retDistTo();
+		model2_startPos = model_list[page][1]->retDistTo();
+
+		model1_targetPos = model2_startPos;
+		model2_targetPos = model1_startPos;
+
+		move_to_other_direct = true;
+		swap_frame = 0;
+		break;
+	case 'u':
+		model1_startPos = model_list[page][0]->retDistTo();
+		model2_startPos = model_list[page][1]->retDistTo();
+
+		model1_targetPos = model2_startPos;
+		model2_targetPos = model1_startPos;
+
+		move_to_other_around = true;
+		swap_frame = 0;
+		break;
 	case 'm':
 		if (cursorEnabled) {
 			cursorEnabled = false;
@@ -244,6 +275,34 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 GLvoid TimerFunc(int value)
 {
+	if (move_to_other_direct) {
+		swap_frame++;
+
+		// 프레임에 따른 매개변수 t 계산
+		float t = static_cast<float>(swap_frame) / static_cast<float>(SWAP_DURATION);
+
+		if (t >= 1.0f) {
+			t = 1.0f;
+			move_to_other_direct = false;
+			swap_frame = 0;
+		}
+
+		glm::vec3 model1_currentPos = model_list[page][0]->retDistTo();
+		glm::vec3 model2_currentPos = model_list[page][1]->retDistTo();
+
+		// t에 따라 선형 보간
+		glm::vec3 model1_newPos = glm::mix(model1_startPos, model1_targetPos, t);
+		glm::vec3 model2_newPos = glm::mix(model2_startPos, model2_targetPos, t);
+
+		glm::vec3 delta1 = model1_newPos - model1_currentPos;
+		glm::vec3 delta2 = model2_newPos - model2_currentPos;
+
+		model_list[page][0]->translate(delta1);
+		model_list[page][1]->translate(delta2);
+	}
+	else if (move_to_other_around) {
+		move_to_other_around = false;
+	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }

@@ -110,7 +110,7 @@ void Model::Render() {
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, 0);
 
-	basis->Render();
+	//basis->Render();
 }
 
 DisplayBasis::DisplayBasis(GLfloat offset, const glm::vec3& origin) : origin(origin) {
