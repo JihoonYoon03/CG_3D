@@ -200,26 +200,29 @@ GLvoid drawScene()
 
 	XYZ->Render();
 
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(sun->getModelMatrix()));
+	glm::mat4 sun_model = sun->getModelMatrix();
+	glm::vec3 sun_position = glm::vec3(sun_model[3]); // 변환 행렬 추출
+
+	glm::mat4 z_rot_matrix =
+		glm::translate(glm::mat4(1.0f), sun_position)
+		* glm::rotate(glm::mat4(1.0f), glm::radians(z_rotate), glm::vec3(0.0f, 0.0f, 1.0f))
+		* glm::translate(glm::mat4(1.0f), -sun_position);
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(sun_model));
 	sun->Render();
 	for (int i = 0; i < 3; i++) {
 		// sun->rotate(z_rotate_speed, glm::vec3(0.0f, 0.0f, 1.0f));
-		glm::mat4 z_rot = glm::rotate(glm::mat4(1.0f), glm::radians(z_rotate), glm::vec3(0.0f, 0.0f, 1.0f));
-		glm::mat4 model_mat = orbit_sun[i]->getModelMatrix();
 
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot * model_mat));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot_matrix * orbit_sun[i]->getModelMatrix()));
 		orbit_sun[i]->Render();
 
-		model_mat = planet[i]->getModelMatrix();
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot * model_mat));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot_matrix * planet[i]->getModelMatrix()));
 		planet[i]->Render();
 
-		model_mat = orbit_planet[i]->getModelMatrix();
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot * model_mat));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot_matrix * orbit_planet[i]->getModelMatrix()));
 		orbit_planet[i]->Render();
 
-		model_mat = moon[i]->getModelMatrix();
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot * model_mat));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot_matrix * moon[i]->getModelMatrix()));
 		moon[i]->Render();
 	}
 
