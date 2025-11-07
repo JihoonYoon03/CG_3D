@@ -40,8 +40,8 @@ glm::vec3 scale_from_origin[2][2] = { {{ 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f 
 GLfloat delta_spinX = 0.0f, delta_spinY = 0.0f, delta_orbitY = 0.0f, delta_translateX = 0.0f, delta_translateY = 0.0f, delta_scale = 0.2f;
 glm::vec3 delta_model2to1 = { 0.0f, 0.0f, 0.0f }, delta_model1to2 = { 0.0f, 0.0f, 0.0f };
 
-int selectedModel = 0;
-bool cursorEnabled = false, move_to_other_direct = false, move_to_other_around = false, move_check = false;
+int selectedModel = 0, backup_selected = 0;
+bool cursorEnabled = false, move_to_other_direct = false, move_to_other_around = false, move_check = false, anim_V = false;
 unsigned int page = 0;
 int swap_frame = 0;
 const int SWAP_DURATION = 60;
@@ -49,6 +49,8 @@ const int SWAP_DURATION = 60;
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 {
+	srand(static_cast<unsigned int>(time(0)));
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
@@ -313,7 +315,30 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		swap_frame = 0;
 		break;
 	case 'v':
+	{
+		if (anim_V) {
+			anim_V = false;
+			selectedModel = backup_selected;
+			break;
+		}
+		else {
+			anim_V = true;
+			backup_selected = selectedModel;
+			selectedModel = 2;
+		}
+
+		// 랜덤 선택
+		bool index = rand() % 2;
+
+		model_list[page][index]->setDefScale(glm::vec3(1.6f, 1.6f, 1.6f));
+		model_list[page][(index + 1) % 2]->setDefScale(glm::vec3(0.6f, 0.6f, 0.6f));
+
+		delta_spinY = rand() % 2 ? 1.0f : -1.0f;
+
+		delta_orbitY = rand() % 2 ? 1.0f : -1.0f;
+
 		break;
+	}
 	case 'm':
 		if (cursorEnabled) {
 			cursorEnabled = false;
