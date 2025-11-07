@@ -106,6 +106,8 @@ GLfloat orbit_radius_sun = 2.0f, orbit_radius_planet = 0.8f;
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 
 // 수치 변화량
+GLfloat planet_speed[3];
+GLfloat moon_speed[3];
 glm::vec3 sun_translate(0.0f, 0.0f, 0.0f);
 bool isOrtho = false, isWire = false, zRotate = false;
 char lastScaleKey = ' ';
@@ -135,7 +137,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	sun = new Model("Models/Sphere.obj", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	for (int i = 0; i < 3; i++) {
 		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
-		orbit_sun[i] = new Orbit(glm::vec3(0.2f, 0.5f, 0.2f));
+		orbit_sun[i] = new Orbit(glm::vec3(0.2f, 0.5f, 0.2f)); 
 		orbit_sun[i]->setParent(sun);
 		orbit_sun[i]->setDefScale(glm::vec3(orbit_radius_sun + i, 1.0f, orbit_radius_sun + i));
 		orbit_sun[i]->setDefRotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
@@ -145,6 +147,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 		planet[i]->setDefTranslate(glm::vec3(orbit_radius_sun + i, 0.0f, 0.0f));
 		planet[i]->rotate(120.0f * i, glm::vec3(0.0f, 1.0f, 0.0f));
 		planet[i]->rotate(offset, glm::vec3(0.0f, 0.0f, 1.0f));
+		planet_speed[i] = rand() / static_cast<GLfloat>(RAND_MAX / 2.0f) + 0.2f; // 0.2 ~ 2.2
 
 		orbit_planet[i] = new Orbit(glm::vec3(0.0f, 0.5f, 0.5f));
 		orbit_planet[i]->setParent(planet[i]);
@@ -153,6 +156,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 		moon[i] = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 0.0f, 0.0f));
 		moon[i]->setParent(planet[i]);
 		moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
+		moon_speed[i] = rand() / static_cast<GLfloat>(RAND_MAX / 1.5f) + 0.2f; // 0.2 ~ 1.7
 
 		//orbit_planet[i]->setDefRotate(glm::setDefRotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
 	}
@@ -319,6 +323,14 @@ GLvoid KeyboardUp(unsigned char key, int x, int y)
 GLvoid TimerFunc(int value)
 {
 	sun->translate(sun_translate);
+	for (int i = 0; i < 3; i++) {
+		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
+		planet[i]->rotate(-offset, glm::vec3(0.0f, 0.0f, 1.0f));
+		planet[i]->rotate(planet_speed[i], glm::vec3(0.0f, 1.0f, 0.0f));
+		planet[i]->rotate(offset, glm::vec3(0.0f, 0.0f, 1.0f));
+
+		moon[i]->rotate(moon_speed[i], glm::vec3(0.0f, 1.0f, 0.0f));
+	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }
