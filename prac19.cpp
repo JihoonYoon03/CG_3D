@@ -63,15 +63,15 @@ public:
 		this->parent = parent;
 	}
 
-	void scale(glm::vec3 scaleFactor) {
+	void setDefScale(glm::vec3 scaleFactor) {
 		scale_mat = glm::scale(glm::mat4(1.0f), scaleFactor);
 	}
 
-	void rotate(glm::mat4 rotationFactor) {
+	void setDefRotate(glm::mat4 rotationFactor) {
 		rotation_mat = rotationFactor;
 	}
 
-	void translate(glm::vec3 translateFactor) {
+	void setDefTranslate(glm::vec3 translateFactor) {
 		translation_mat = glm::translate(glm::mat4(1.0f), translateFactor);
 	}
 
@@ -108,6 +108,7 @@ GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 // 수치 변화량
 glm::vec3 sun_translate(0.0f, 0.0f, 0.0f);
 bool isOrtho = false, isWire = false, zRotate = false;
+char lastScaleKey = ' ';
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -136,24 +137,24 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
 		orbit_sun[i] = new Orbit(glm::vec3(0.2f, 0.5f, 0.2f));
 		orbit_sun[i]->setParent(sun);
-		orbit_sun[i]->scale(glm::vec3(orbit_radius_sun + i, 1.0f, orbit_radius_sun + i));
-		orbit_sun[i]->rotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
+		orbit_sun[i]->setDefScale(glm::vec3(orbit_radius_sun + i, 1.0f, orbit_radius_sun + i));
+		orbit_sun[i]->setDefRotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
 
 		planet[i] = new Model("Models/Sphere.obj", glm::vec3(0.3f, 0.3f, 0.3f), glm::vec3(0.0f, 1.0f, 0.0f));
 		planet[i]->setParent(sun);
-		planet[i]->translate(glm::vec3(orbit_radius_sun + i, 0.0f, 0.0f));
+		planet[i]->setDefTranslate(glm::vec3(orbit_radius_sun + i, 0.0f, 0.0f));
 		planet[i]->rotate(120.0f * i, glm::vec3(0.0f, 1.0f, 0.0f));
 		planet[i]->rotate(offset, glm::vec3(0.0f, 0.0f, 1.0f));
 
 		orbit_planet[i] = new Orbit(glm::vec3(0.0f, 0.5f, 0.5f));
 		orbit_planet[i]->setParent(planet[i]);
-		orbit_planet[i]->scale(glm::vec3(orbit_radius_planet, 1.0f, orbit_radius_planet));
+		orbit_planet[i]->setDefScale(glm::vec3(orbit_radius_planet, 1.0f, orbit_radius_planet));
 
 		moon[i] = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 0.0f, 0.0f));
 		moon[i]->setParent(planet[i]);
 		moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
 
-		//orbit_planet[i]->rotate(glm::rotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
+		//orbit_planet[i]->setDefRotate(glm::setDefRotate(glm::mat4(1.0f), glm::radians(offset), glm::vec3(0.0f, 0.0f, 1.0f)));
 	}
 
 	glutDisplayFunc(drawScene);
@@ -255,6 +256,30 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		break;
 	case 'y': case 'Y':
 		// 궤도 반지름 증감
+		// 먼저 기본값으로 리셋
+		for (int i = 0; i < 3; i++) {
+			orbit_sun[i]->setDefScale(glm::vec3(orbit_radius_sun + i, 1.0f, orbit_radius_sun + i));
+			orbit_planet[i]->setDefScale(glm::vec3(orbit_radius_planet, 1.0f, orbit_radius_planet));
+
+			planet[i]->setDefTranslate(glm::vec3((orbit_radius_sun + i), 0.0f, 0.0f));
+			moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
+		}
+
+		// 그 다음 증감 (이전 입력 키가 없거나 다를 때만)
+		if (lastScaleKey != key) {
+			GLfloat offset = key == 'y' ? 1.4f : 0.8f;
+			for (int i = 0; i < 3; i++) {
+				orbit_sun[i]->setDefScale(glm::vec3((orbit_radius_sun + i) * offset, 1.0f, (orbit_radius_sun + i) * offset));
+				orbit_planet[i]->setDefScale(glm::vec3(orbit_radius_planet * offset, 1.0f, orbit_radius_planet * offset));
+
+				planet[i]->setDefTranslate(glm::vec3(((orbit_radius_sun + i) * offset), 0.0f, 0.0f));
+				moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet * offset, 0.0f, 0.0f));
+			}
+			lastScaleKey = key;
+		}
+		else {
+			lastScaleKey = ' ';
+		}
 		break;
 	case 'z': case 'Z':
 		// 중심 제외 z축 회전
