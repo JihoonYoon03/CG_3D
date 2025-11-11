@@ -79,9 +79,9 @@ DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 
-GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
+GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f, middle_rot = 0.0f;
 glm::vec3 camera_pos{ 0.0f, 0.0f, 0.0f };
-glm::vec3 tank_delta{ 0.0f, 0.0f, 0.0f };
+glm::vec3 tank_trans{ 0.0f, 0.0f, 0.0f };
 
 GLfloat camera_offsetZ = 5.0f;
 int cam_offsetZ_dir = 0;
@@ -208,6 +208,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		else
 			cam_offsetZ_dir = 0;
 		break;
+	case 't':
+		if (middle_rot == 0)
+			middle_rot = 1;
+		else
+			middle_rot = 0;
+		break;
 	case 'q':
 		exit(0);
 		break;
@@ -218,16 +224,16 @@ GLvoid SpecialKeyboard(int key, int x, int y)
 {
 	switch (key) {
 	case GLUT_KEY_UP:
-		if (tank_delta.z >= 0) tank_delta.z -= 1;
+		if (tank_trans.z >= 0) tank_trans.z -= 1;
 		break;
 	case GLUT_KEY_DOWN:
-		if (tank_delta.z <= 0) tank_delta.z += 1;
+		if (tank_trans.z <= 0) tank_trans.z += 1;
 		break;
 	case GLUT_KEY_LEFT:
-		if (tank_delta.x >= 0) tank_delta.x -= 1;
+		if (tank_trans.x >= 0) tank_trans.x -= 1;
 		break;
 	case GLUT_KEY_RIGHT:
-		if (tank_delta.x <= 0) tank_delta.x += 1;
+		if (tank_trans.x <= 0) tank_trans.x += 1;
 		break;
 	}
 }
@@ -236,16 +242,16 @@ GLvoid SpecialKeyboardUp(int key, int x, int y)
 {
 	switch (key) {
 	case GLUT_KEY_UP:
-		if (tank_delta.z <= 0) tank_delta.z += 1;
+		if (tank_trans.z <= 0) tank_trans.z += 1;
 		break;
 	case GLUT_KEY_DOWN:
-		if (tank_delta.z >= 0) tank_delta.z -= 1;
+		if (tank_trans.z >= 0) tank_trans.z -= 1;
 		break;
 	case GLUT_KEY_LEFT:
-		if (tank_delta.x <= 0) tank_delta.x += 1;
+		if (tank_trans.x <= 0) tank_trans.x += 1;
 		break;
 	case GLUT_KEY_RIGHT:
-		if (tank_delta.x >= 0) tank_delta.x -= 1;
+		if (tank_trans.x >= 0) tank_trans.x -= 1;
 		break;
 	}
 }
@@ -253,7 +259,12 @@ GLvoid SpecialKeyboardUp(int key, int x, int y)
 GLvoid TimerFunc(int value)
 {
 	camera_offsetZ += 0.1f * cam_offsetZ_dir;
-	body_bottom->translate(tank_delta * 0.1f);
+	body_bottom->translate(tank_trans * 0.1f);
+	if (middle_rot) {
+		body_middle->translate(-body_middle->retDistTo());
+		body_middle->rotate(middle_rot, glm::vec3(0.0f, 1.0f, 0.0f));
+		body_middle->translate(body_middle->retDistTo());
+	}
 
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
