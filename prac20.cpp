@@ -82,9 +82,13 @@ glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f, middle_rot = 0.0f;
 glm::vec3 camera_pos{ 0.0f, 0.0f, 0.0f };
 glm::vec3 tank_trans{ 0.0f, 0.0f, 0.0f };
+glm::vec3 turret1_start_pos{ 0.0f, 0.0f, 0.0f }, turret2_start_pos{ 0.0f, 0.0f, 0.0f };
+glm::vec3 turret1_end_pos{ 0.0f, 0.0f, 0.0f }, turret2_end_pos{ 0.0f, 0.0f, 0.0f };
 
 GLfloat camera_offsetZ = 5.0f;
-int cam_offsetZ_dir = 0;
+int cam_offsetZ_dir = 0, turret_change_frame = 0;
+bool turret_change = false;
+const unsigned int TURRET_CHANGE_DURATION = 60;
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -214,6 +218,15 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		else
 			middle_rot = 0;
 		break;
+	case 'l':
+		if (!turret_change) {
+			turret1_start_pos = turret1->retDistTo();
+			turret2_start_pos = turret2->retDistTo();
+			turret1_end_pos = turret2_start_pos;
+			turret2_end_pos = turret1_start_pos;
+			turret_change = true;
+		}
+		break;
 	case 'q':
 		exit(0);
 		break;
@@ -259,11 +272,33 @@ GLvoid SpecialKeyboardUp(int key, int x, int y)
 GLvoid TimerFunc(int value)
 {
 	camera_offsetZ += 0.1f * cam_offsetZ_dir;
-	body_bottom->translate(tank_trans * 0.1f);
-	if (middle_rot) {
-		body_middle->translate(-body_middle->retDistTo());
-		body_middle->rotate(middle_rot, glm::vec3(0.0f, 1.0f, 0.0f));
-		body_middle->translate(body_middle->retDistTo());
+	if (turret_change) {
+		turret_change_frame++;
+		
+		float t = static_cast<float>(turret_change_frame) / TURRET_CHANGE_DURATION;
+		
+		if (t > 1.0f) {
+			t = 1.0f;
+			turret_change = false;
+			turret_change_frame = 0;
+		}
+
+		glm::vec3 new_turret1_pos = glm::mix(turret1_start_pos, turret1_end_pos, t);
+		glm::vec3 new_turret2_pos = glm::mix(turret2_start_pos, turret2_end_pos, t);
+
+		glm::vec3 delta_turret1 = new_turret1_pos - turret1->retDistTo();
+		glm::vec3 delta_turret2 = new_turret2_pos - turret2->retDistTo();
+
+		turret1->translate(delta_turret1);
+		turret2->translate(delta_turret2);
+	}
+	else {
+		body_bottom->translate(tank_trans * 0.1f);
+		if (middle_rot) {
+			body_middle->translate(-body_middle->retDistTo());
+			body_middle->rotate(middle_rot, glm::vec3(0.0f, 1.0f, 0.0f));
+			body_middle->translate(body_middle->retDistTo());
+		}
 	}
 
 	glutPostRedisplay();
