@@ -79,7 +79,7 @@ DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 
-GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f, middle_rot = 0.0f, cannon_rot = 0.0f;
+GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f, middle_rot = 0.0f, cannon_rot = 0.0f, flag_rot = 0.0f;
 glm::vec3 camera_pos{ 0.0f, 0.0f, 0.0f };
 glm::vec3 tank_trans{ 0.0f, 0.0f, 0.0f };
 glm::vec3 turret1_start_pos{ 0.0f, 0.0f, 0.0f }, turret2_start_pos{ 0.0f, 0.0f, 0.0f };
@@ -119,8 +119,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	turret2 = new Model("Models/Cube.obj", { 0.6f, 0.2f, 0.6f }, { 0.0f, 1.0f, 1.0f });
 	cannon1 = new Model("Models/Cube.obj", { 0.1f, 0.1f, 0.4f }, { 0.0f, 1.0f, 1.0f });
 	cannon2 = new Model("Models/Cube.obj", { 0.1f, 0.1f, 0.4f }, { 0.0f, 1.0f, 1.0f });
-	flag1 = new Model("Models/Cube.obj", { 0.1f, 0.5f, 0.1f }, { 1.0f, 0.0f, 1.0f });
-	flag2 = new Model("Models/Cube.obj", { 0.1f, 0.5f, 0.1f }, { 1.0f, 0.0f, 1.0f });
+	flag1 = new Model("Models/Cube.obj", { 0.1f, 0.4f, 0.1f }, { 1.0f, 0.0f, 1.0f });
+	flag2 = new Model("Models/Cube.obj", { 0.1f, 0.4f, 0.1f }, { 1.0f, 0.0f, 1.0f });
 	body_bottom->setDefTranslate({ 0.0f, 0.5f, 0.0f });
 	body_middle->setDefTranslate({ 0.0f, 0.75f, 0.0f });
 	body_middle->setParent(body_bottom);
@@ -132,9 +132,9 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	cannon1->setParent(turret1);
 	cannon2->setDefTranslate({ 0.0f, 0.0f, 1.0f });
 	cannon2->setParent(turret2);
-	flag1->setDefTranslate({ 0.0f, 0.5f, 0.0f });
+	flag1->setDefTranslate({ 0.0f, 0.6f, 0.0f });
 	flag1->setParent(turret1);
-	flag2->setDefTranslate({ 0.0f, 0.5f, 0.0f });
+	flag2->setDefTranslate({ 0.0f, 0.6f, 0.0f });
 	flag2->setParent(turret2);
 
 	glutDisplayFunc(drawScene);
@@ -233,6 +233,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		else
 			cannon_rot = 0;
 		break;
+	case 'p':
+		if (flag_rot == 0)
+			flag_rot = 1;
+		else
+			flag_rot = 0;
+		break;
 	case 'q':
 		exit(0);
 		break;
@@ -312,6 +318,14 @@ GLvoid TimerFunc(int value)
 			cannon2->translate(-cannon2->retDistTo());
 			cannon2->rotate(-cannon_rot, glm::vec3(0.0f, 1.0f, 0.0f));
 			cannon2->translate(cannon2->retDistTo());
+		}
+		if (flag_rot) {
+			flag1->translate(-flag1->retDistTo());
+			flag1->rotate(flag_rot, glm::vec3(1.0f, 0.0f, 0.0f));
+			flag1->translate(flag1->retDistTo());
+			flag2->translate(-flag2->retDistTo());
+			flag2->rotate(-flag_rot, glm::vec3(1.0f, 0.0f, 0.0f));
+			flag2->translate(flag2->retDistTo());
 		}
 	}
 
