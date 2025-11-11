@@ -79,7 +79,7 @@ DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 
-GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f, middle_rot = 0.0f;
+GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f, middle_rot = 0.0f, cannon_rot = 0.0f;
 glm::vec3 camera_pos{ 0.0f, 0.0f, 0.0f };
 glm::vec3 tank_trans{ 0.0f, 0.0f, 0.0f };
 glm::vec3 turret1_start_pos{ 0.0f, 0.0f, 0.0f }, turret2_start_pos{ 0.0f, 0.0f, 0.0f };
@@ -117,8 +117,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	body_middle = new Model("Models/Cube.obj", { 1.2f, 0.25f, 0.5f }, { 1.0f, 0.0f, 0.0f });
 	turret1 = new Model("Models/Cube.obj", { 0.6f, 0.2f, 0.6f }, { 0.0f, 1.0f, 1.0f });
 	turret2 = new Model("Models/Cube.obj", { 0.6f, 0.2f, 0.6f }, { 0.0f, 1.0f, 1.0f });
-	cannon1 = new Model("Models/Cube.obj", { 0.1f, 0.1f, 0.8f }, { 0.0f, 1.0f, 1.0f });
-	cannon2 = new Model("Models/Cube.obj", { 0.1f, 0.1f, 0.8f }, { 0.0f, 1.0f, 1.0f });
+	cannon1 = new Model("Models/Cube.obj", { 0.1f, 0.1f, 0.4f }, { 0.0f, 1.0f, 1.0f });
+	cannon2 = new Model("Models/Cube.obj", { 0.1f, 0.1f, 0.4f }, { 0.0f, 1.0f, 1.0f });
 	flag1 = new Model("Models/Cube.obj", { 0.1f, 0.5f, 0.1f }, { 1.0f, 0.0f, 1.0f });
 	flag2 = new Model("Models/Cube.obj", { 0.1f, 0.5f, 0.1f }, { 1.0f, 0.0f, 1.0f });
 	body_bottom->setDefTranslate({ 0.0f, 0.5f, 0.0f });
@@ -128,9 +128,9 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	turret1->setParent(body_middle);
 	turret2->setDefTranslate({ 1.2f, 0.45f, 0.0f });
 	turret2->setParent(body_middle);
-	cannon1->setDefTranslate({ 0.0f, 0.0f, 0.7f });
+	cannon1->setDefTranslate({ 0.0f, 0.0f, 1.0f });
 	cannon1->setParent(turret1);
-	cannon2->setDefTranslate({ 0.0f, 0.0f, 0.7f });
+	cannon2->setDefTranslate({ 0.0f, 0.0f, 1.0f });
 	cannon2->setParent(turret2);
 	flag1->setDefTranslate({ 0.0f, 0.5f, 0.0f });
 	flag1->setParent(turret1);
@@ -202,13 +202,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	switch (key) {
 	case 'z':
 		if (cam_offsetZ_dir == 0)
-			cam_offsetZ_dir = 1;
+			cam_offsetZ_dir = -1;
 		else
 			cam_offsetZ_dir = 0;
 		break;
 	case 'Z':
 		if (cam_offsetZ_dir == 0)
-			cam_offsetZ_dir = -1;
+			cam_offsetZ_dir = 1;
 		else
 			cam_offsetZ_dir = 0;
 		break;
@@ -226,6 +226,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			turret2_end_pos = turret1_start_pos;
 			turret_change = true;
 		}
+		break;
+	case 'g':
+		if (cannon_rot == 0)
+			cannon_rot = 1;
+		else
+			cannon_rot = 0;
 		break;
 	case 'q':
 		exit(0);
@@ -298,6 +304,14 @@ GLvoid TimerFunc(int value)
 			body_middle->translate(-body_middle->retDistTo());
 			body_middle->rotate(middle_rot, glm::vec3(0.0f, 1.0f, 0.0f));
 			body_middle->translate(body_middle->retDistTo());
+		}
+		if (cannon_rot) {
+			cannon1->translate(-cannon1->retDistTo());
+			cannon1->rotate(cannon_rot, glm::vec3(0.0f, 1.0f, 0.0f));
+			cannon1->translate(cannon1->retDistTo());
+			cannon2->translate(-cannon2->retDistTo());
+			cannon2->rotate(-cannon_rot, glm::vec3(0.0f, 1.0f, 0.0f));
+			cannon2->translate(cannon2->retDistTo());
 		}
 	}
 
