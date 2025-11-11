@@ -14,7 +14,8 @@
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
-GLvoid KeyboardUp(unsigned char key, int x, int y);
+GLvoid SpecialKeyboard(int key, int x, int y);
+GLvoid SpecialKeyboardUp(int key, int x, int y);
 GLvoid MouseMotion(int x, int y);
 GLvoid TimerFunc(int value);
 
@@ -71,15 +72,16 @@ public:
 	}
 };
 
-Plane *ground = nullptr;
-Model *body_bottom = nullptr, *body_middle = nullptr, *turret1 = nullptr, *turret2 = nullptr;
-Model *cannon1 = nullptr, *cannon2 = nullptr, *flag1 = nullptr, *flag2 = nullptr;
+Plane* ground = nullptr;
+Model* body_bottom = nullptr, * body_middle = nullptr, * turret1 = nullptr, * turret2 = nullptr;
+Model* cannon1 = nullptr, * cannon2 = nullptr, * flag1 = nullptr, * flag2 = nullptr;
 DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 glm::vec3 camera_pos{ 0.0f, 0.0f, 0.0f };
+glm::vec3 tank_delta{ 0.0f, 0.0f, 0.0f };
 
 GLfloat camera_offsetZ = 5.0f;
 int cam_offsetZ_dir = 0;
@@ -107,8 +109,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	// 데이터 초기화
 	XYZ = new DisplayBasis(2.0f);
 	ground = new Plane({ 10.0f, 1.0f, 10.0f });
-	body_bottom = new Model("Models/Cube.obj", {2.0f, 0.5f, 1.5f});
-	body_middle = new Model("Models/Cube.obj", { 1.2f, 0.25f, 0.5f }, {1.0f, 0.0f, 0.0f});
+	body_bottom = new Model("Models/Cube.obj", { 2.0f, 0.5f, 1.5f });
+	body_middle = new Model("Models/Cube.obj", { 1.2f, 0.25f, 0.5f }, { 1.0f, 0.0f, 0.0f });
 	turret1 = new Model("Models/Cube.obj", { 0.6f, 0.2f, 0.6f }, { 0.0f, 1.0f, 1.0f });
 	turret2 = new Model("Models/Cube.obj", { 0.6f, 0.2f, 0.6f }, { 0.0f, 1.0f, 1.0f });
 	cannon1 = new Model("Models/Cube.obj", { 0.1f, 0.1f, 0.8f }, { 0.0f, 1.0f, 1.0f });
@@ -134,7 +136,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
-	glutKeyboardUpFunc(KeyboardUp);
+	glutSpecialFunc(SpecialKeyboard);
+	glutSpecialUpFunc(SpecialKeyboardUp);
 	glutMotionFunc(MouseMotion);
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
@@ -211,22 +214,47 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	}
 }
 
-GLvoid KeyboardUp(unsigned char key, int x, int y)
+GLvoid SpecialKeyboard(int key, int x, int y)
 {
 	switch (key) {
-	case 'w':
+	case GLUT_KEY_UP:
+		if (tank_delta.z >= 0) tank_delta.z -= 1;
+		break;
+	case GLUT_KEY_DOWN:
+		if (tank_delta.z <= 0) tank_delta.z += 1;
+		break;
+	case GLUT_KEY_LEFT:
+		if (tank_delta.x >= 0) tank_delta.x -= 1;
+		break;
+	case GLUT_KEY_RIGHT:
+		if (tank_delta.x <= 0) tank_delta.x += 1;
+		break;
+	}
+}
+
+GLvoid SpecialKeyboardUp(int key, int x, int y)
+{
+	switch (key) {
+	case GLUT_KEY_UP:
+		if (tank_delta.z <= 0) tank_delta.z += 1;
+		break;
+	case GLUT_KEY_DOWN:
+		if (tank_delta.z >= 0) tank_delta.z -= 1;
+		break;
+	case GLUT_KEY_LEFT:
+		if (tank_delta.x <= 0) tank_delta.x += 1;
+		break;
+	case GLUT_KEY_RIGHT:
+		if (tank_delta.x >= 0) tank_delta.x -= 1;
 		break;
 	}
 }
 
 GLvoid TimerFunc(int value)
 {
-	if (cam_offsetZ_dir == 1) {
-		camera_offsetZ -= 0.1f;
-	}
-	else if (cam_offsetZ_dir == -1) {
-		camera_offsetZ += 0.1f;
-	}
+	camera_offsetZ += 0.1f * cam_offsetZ_dir;
+	body_bottom->translate(tank_delta * 0.1f);
+
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }
