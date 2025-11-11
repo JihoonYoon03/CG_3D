@@ -16,7 +16,6 @@ GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
 GLvoid SpecialKeyboard(int key, int x, int y);
 GLvoid SpecialKeyboardUp(int key, int x, int y);
-GLvoid MouseMotion(int x, int y);
 GLvoid TimerFunc(int value);
 
 //--- 필요한 변수 선언
@@ -79,13 +78,13 @@ DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 
-GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f, middle_rot = 0.0f, cannon_rot = 0.0f, flag_rot = 0.0f;
-glm::vec3 camera_pos{ 0.0f, 0.0f, 0.0f };
+GLfloat camera_rotY_self = 0.0f, camera_rotY_orbit = 0.0f, middle_rot = 0.0f, cannon_rot = 0.0f, flag_rot = 0.0f;
+glm::vec3 camera_pos{ 0.0f, 2.0f, 0.0f };
 glm::vec3 tank_trans{ 0.0f, 0.0f, 0.0f };
 glm::vec3 turret1_start_pos{ 0.0f, 0.0f, 0.0f }, turret2_start_pos{ 0.0f, 0.0f, 0.0f };
 glm::vec3 turret1_end_pos{ 0.0f, 0.0f, 0.0f }, turret2_end_pos{ 0.0f, 0.0f, 0.0f };
 
-GLfloat camera_offsetZ = 5.0f;
+GLfloat camera_offsetZ = 5.0f, camera_rotY_self_delta = 0.0f, camera_rotY_orbit_delta = 0.0f;
 glm::vec3 camera_delta{ 0.0f, 0.0f, 0.0f };
 int turret_change_frame = 0;
 bool turret_change = false;
@@ -143,7 +142,6 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glutKeyboardFunc(Keyboard);
 	glutSpecialFunc(SpecialKeyboard);
 	glutSpecialUpFunc(SpecialKeyboardUp);
-	glutMotionFunc(MouseMotion);
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
 }
@@ -154,13 +152,11 @@ GLvoid drawScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
+	glm::mat4 projection = glm::perspective(glm::radians(55.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-	glm::vec3 EYE = body_bottom->retCenter() + glm::vec3(0.0f, 2.0f, 0.0f) + camera_pos;
-	glm::mat4 view = glm::lookAt(EYE, EYE + glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	view = glm::rotate(view, glm::radians(m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
-	view = glm::rotate(view, glm::radians(m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(camera_pos, camera_pos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	view = glm::rotate(view, glm::radians(-camera_rotY_self), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 world = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -203,27 +199,39 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	switch (key) {
 	case 'z':
 		if (camera_delta.z == 0)
-			camera_delta.z = -1;
+			camera_delta.z = 1;
 		else
 			camera_delta.z = 0;
 		break;
 	case 'Z':
 		if (camera_delta.z == 0)
-			camera_delta.z = 1;
+			camera_delta.z = -1;
 		else
 			camera_delta.z = 0;
 		break;
 	case 'x':
 		if (camera_delta.x == 0)
-			camera_delta.x = -1;
+			camera_delta.x = 1;
 		else
 			camera_delta.x = 0;
 		break;
 	case 'X':
 		if (camera_delta.x == 0)
-			camera_delta.x = 1;
+			camera_delta.x = -1;
 		else
 			camera_delta.x = 0;
+		break;
+	case 'y':
+		if (camera_rotY_self_delta == 0)
+			camera_rotY_self_delta = 1;
+		else
+			camera_rotY_self_delta = 0;
+		break;
+	case 'Y':
+		if (camera_rotY_self_delta == 0)
+			camera_rotY_self_delta = -1;
+		else
+			camera_rotY_self_delta = 0;
 		break;
 	case 't':
 		if (middle_rot == 0)
@@ -297,6 +305,8 @@ GLvoid SpecialKeyboardUp(int key, int x, int y)
 GLvoid TimerFunc(int value)
 {
 	camera_pos += 0.1f * camera_delta;
+	camera_rotY_self += camera_rotY_self_delta;
+	camera_rotY_orbit += camera_rotY_orbit_delta;
 	if (turret_change) {
 		turret_change_frame++;
 		
@@ -344,15 +354,4 @@ GLvoid TimerFunc(int value)
 
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
-}
-
-GLvoid MouseMotion(int x, int y)
-{
-	m_rotationX += (x - winWidth / 2) * 0.2f;
-	m_rotationY += (y - winHeight / 2) * 0.2f;
-
-	if (m_rotationY > 59.0f) m_rotationY = 59.0f;
-	if (m_rotationY < -119.0f) m_rotationY = -119.0f;
-
-	glutWarpPointer(winWidth / 2, winHeight / 2);
 }
