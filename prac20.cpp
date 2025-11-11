@@ -73,6 +73,7 @@ public:
 
 Plane *ground = nullptr;
 Model *body_bottom = nullptr, *body_middle = nullptr, *turret1 = nullptr, *turret2 = nullptr;
+Model *cannon1 = nullptr, *cannon2 = nullptr, *flag1 = nullptr, *flag2 = nullptr;
 DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
@@ -110,6 +111,10 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	body_middle = new Model("Models/Cube.obj", { 1.2f, 0.25f, 0.5f }, {1.0f, 0.0f, 0.0f});
 	turret1 = new Model("Models/Cube.obj", { 0.6f, 0.2f, 0.6f }, { 0.0f, 1.0f, 1.0f });
 	turret2 = new Model("Models/Cube.obj", { 0.6f, 0.2f, 0.6f }, { 0.0f, 1.0f, 1.0f });
+	cannon1 = new Model("Models/Cube.obj", { 0.1f, 0.1f, 0.8f }, { 0.0f, 1.0f, 1.0f });
+	cannon2 = new Model("Models/Cube.obj", { 0.1f, 0.1f, 0.8f }, { 0.0f, 1.0f, 1.0f });
+	flag1 = new Model("Models/Cube.obj", { 0.1f, 0.5f, 0.1f }, { 1.0f, 0.0f, 1.0f });
+	flag2 = new Model("Models/Cube.obj", { 0.1f, 0.5f, 0.1f }, { 1.0f, 0.0f, 1.0f });
 	body_bottom->setDefTranslate({ 0.0f, 0.5f, 0.0f });
 	body_middle->setDefTranslate({ 0.0f, 0.75f, 0.0f });
 	body_middle->setParent(body_bottom);
@@ -117,6 +122,14 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	turret1->setParent(body_middle);
 	turret2->setDefTranslate({ 1.2f, 0.45f, 0.0f });
 	turret2->setParent(body_middle);
+	cannon1->setDefTranslate({ 0.0f, 0.0f, 0.7f });
+	cannon1->setParent(turret1);
+	cannon2->setDefTranslate({ 0.0f, 0.0f, 0.7f });
+	cannon2->setParent(turret2);
+	flag1->setDefTranslate({ 0.0f, 0.5f, 0.0f });
+	flag1->setParent(turret1);
+	flag2->setDefTranslate({ 0.0f, 0.5f, 0.0f });
+	flag2->setParent(turret2);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
@@ -139,7 +152,7 @@ GLvoid drawScene()
 	camera_pos = body_bottom->retCenter() + glm::vec3(0.0f, 2.0f, camera_offsetZ);
 	glm::mat4 view = glm::lookAt(camera_pos, glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
-	view = glm::rotate(view, glm::radians(-m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
+	view = glm::rotate(view, glm::radians(m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 world = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -148,18 +161,24 @@ GLvoid drawScene()
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 	XYZ->Render();
 	ground->Render();
-	
+
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(body_bottom->getModelMatrix()));
 	body_bottom->Render();
-
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(body_middle->getModelMatrix()));
 	body_middle->Render();
-
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(turret1->getModelMatrix()));
 	turret1->Render();
-
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(turret2->getModelMatrix()));
 	turret2->Render();
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(cannon1->getModelMatrix()));
+	cannon1->Render();
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(cannon2->getModelMatrix()));
+	cannon2->Render();
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(flag1->getModelMatrix()));
+	flag1->Render();
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(flag2->getModelMatrix()));
+	flag2->Render();
+
 
 	glutSwapBuffers();
 }
