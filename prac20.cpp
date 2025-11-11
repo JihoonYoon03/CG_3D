@@ -86,7 +86,8 @@ glm::vec3 turret1_start_pos{ 0.0f, 0.0f, 0.0f }, turret2_start_pos{ 0.0f, 0.0f, 
 glm::vec3 turret1_end_pos{ 0.0f, 0.0f, 0.0f }, turret2_end_pos{ 0.0f, 0.0f, 0.0f };
 
 GLfloat camera_offsetZ = 5.0f;
-int cam_offsetZ_dir = 0, turret_change_frame = 0;
+glm::vec3 camera_delta{ 0.0f, 0.0f, 0.0f };
+int turret_change_frame = 0;
 bool turret_change = false;
 const unsigned int TURRET_CHANGE_DURATION = 60;
 
@@ -156,8 +157,8 @@ GLvoid drawScene()
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-	camera_pos = body_bottom->retCenter() + glm::vec3(0.0f, 2.0f, camera_offsetZ);
-	glm::mat4 view = glm::lookAt(camera_pos, glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::vec3 EYE = body_bottom->retCenter() + glm::vec3(0.0f, 2.0f, 0.0f) + camera_pos;
+	glm::mat4 view = glm::lookAt(EYE, EYE + glm::vec3(0.0f, 0.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -201,16 +202,28 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
 	case 'z':
-		if (cam_offsetZ_dir == 0)
-			cam_offsetZ_dir = -1;
+		if (camera_delta.z == 0)
+			camera_delta.z = -1;
 		else
-			cam_offsetZ_dir = 0;
+			camera_delta.z = 0;
 		break;
 	case 'Z':
-		if (cam_offsetZ_dir == 0)
-			cam_offsetZ_dir = 1;
+		if (camera_delta.z == 0)
+			camera_delta.z = 1;
 		else
-			cam_offsetZ_dir = 0;
+			camera_delta.z = 0;
+		break;
+	case 'x':
+		if (camera_delta.x == 0)
+			camera_delta.x = -1;
+		else
+			camera_delta.x = 0;
+		break;
+	case 'X':
+		if (camera_delta.x == 0)
+			camera_delta.x = 1;
+		else
+			camera_delta.x = 0;
 		break;
 	case 't':
 		if (middle_rot == 0)
@@ -283,7 +296,7 @@ GLvoid SpecialKeyboardUp(int key, int x, int y)
 
 GLvoid TimerFunc(int value)
 {
-	camera_offsetZ += 0.1f * cam_offsetZ_dir;
+	camera_pos += 0.1f * camera_delta;
 	if (turret_change) {
 		turret_change_frame++;
 		
