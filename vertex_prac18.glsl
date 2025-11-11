@@ -6,7 +6,6 @@ uniform mat4 projection = mat4(1.0);
 uniform mat4 view = mat4(1.0);
 uniform mat4 world = mat4(1.0);
 uniform mat4 model = mat4(1.0);
-uniform vec3 color_set = vec3(0.0, 0.0, 0.0);
 out vec3 vertexColor;
 
 void main()

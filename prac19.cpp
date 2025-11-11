@@ -175,6 +175,15 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	glutMotionFunc(MouseMotion);
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
+
+	delete XYZ;
+	for (int i = 0; i < 3; i++) {
+		delete orbit_sun[i];
+		delete planet[i];
+		delete orbit_planet[i];
+		delete moon[i];
+	}
+	delete sun;
 }
 
 GLvoid drawScene()

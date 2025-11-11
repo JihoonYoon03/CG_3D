@@ -24,13 +24,64 @@ GLuint shaderProgramID; //--- 세이더 프로그램 이름
 GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
-Model* body_bottom = nullptr;
+class Plane {
+	glm::vec3 vertices[4][2] = {
+		{ { 1.0f, 0.0f, 1.0f }, {0.1f, 0.5f, 0.0f} },
+		{ { -1.0f, 0.0f, 1.0f }, {0.1f, 0.5f, 0.0f} },
+		{ { -1.0f, 0.0f, -1.0f }, {0.1f, 0.5f, 0.0f} },
+		{ { 1.0f, 0.0f, -1.0f }, {0.1f, 0.5f, 0.0f} }
+	};
+
+	GLuint faces[6] = {
+		0, 2, 1,
+		0, 3, 2
+	};
+
+	GLuint VAO, VBO, EBO;
+
+public:
+	Plane(glm::vec3 scaleFactor) {
+		for (int i = 0; i < 4; i++) {
+			vertices[i][0] *= scaleFactor;
+		}
+
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &EBO);
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(faces), faces, GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3) * 2, (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3) * 2, (GLvoid*)sizeof(glm::vec3));
+		glEnableVertexAttribArray(1);
+
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+	void Render() {
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
+};
+
+Plane *ground = nullptr;
+Model *body_bottom = nullptr, *body_middle = nullptr, *turret1 = nullptr, *turret2 = nullptr;
 DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
+glm::vec3 camera_pos{ 0.0f, 0.0f, 0.0f };
 
+GLfloat camera_offsetZ = 5.0f;
+int cam_offsetZ_dir = 0;
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -54,7 +105,18 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 
 	// 데이터 초기화
 	XYZ = new DisplayBasis(2.0f);
+	ground = new Plane({ 10.0f, 1.0f, 10.0f });
 	body_bottom = new Model("Models/Cube.obj", {2.0f, 0.5f, 1.5f});
+	body_middle = new Model("Models/Cube.obj", { 1.2f, 0.25f, 0.5f }, {1.0f, 0.0f, 0.0f});
+	turret1 = new Model("Models/Cube.obj", { 0.6f, 0.2f, 0.6f }, { 0.0f, 1.0f, 1.0f });
+	turret2 = new Model("Models/Cube.obj", { 0.6f, 0.2f, 0.6f }, { 0.0f, 1.0f, 1.0f });
+	body_bottom->setDefTranslate({ 0.0f, 0.5f, 0.0f });
+	body_middle->setDefTranslate({ 0.0f, 0.75f, 0.0f });
+	body_middle->setParent(body_bottom);
+	turret1->setDefTranslate({ -1.2f, 0.45f, 0.0f });
+	turret1->setParent(body_middle);
+	turret2->setDefTranslate({ 1.2f, 0.45f, 0.0f });
+	turret2->setParent(body_middle);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
@@ -74,7 +136,8 @@ GLvoid drawScene()
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	camera_pos = body_bottom->retCenter() + glm::vec3(0.0f, 2.0f, camera_offsetZ);
+	glm::mat4 view = glm::lookAt(camera_pos, glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
 	view = glm::rotate(view, glm::radians(-m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -82,10 +145,21 @@ GLvoid drawScene()
 	glm::mat4 world = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "world"), 1, GL_FALSE, glm::value_ptr(world));
 
-	//glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
-
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 	XYZ->Render();
+	ground->Render();
+	
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(body_bottom->getModelMatrix()));
 	body_bottom->Render();
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(body_middle->getModelMatrix()));
+	body_middle->Render();
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(turret1->getModelMatrix()));
+	turret1->Render();
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(turret2->getModelMatrix()));
+	turret2->Render();
 
 	glutSwapBuffers();
 }
@@ -100,6 +174,18 @@ GLvoid Reshape(int w, int h)
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
+	case 'z':
+		if (cam_offsetZ_dir == 0)
+			cam_offsetZ_dir = 1;
+		else
+			cam_offsetZ_dir = 0;
+		break;
+	case 'Z':
+		if (cam_offsetZ_dir == 0)
+			cam_offsetZ_dir = -1;
+		else
+			cam_offsetZ_dir = 0;
+		break;
 	case 'q':
 		exit(0);
 		break;
@@ -116,6 +202,12 @@ GLvoid KeyboardUp(unsigned char key, int x, int y)
 
 GLvoid TimerFunc(int value)
 {
+	if (cam_offsetZ_dir == 1) {
+		camera_offsetZ -= 0.1f;
+	}
+	else if (cam_offsetZ_dir == -1) {
+		camera_offsetZ += 0.1f;
+	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }
