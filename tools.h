@@ -66,6 +66,7 @@ public:
 	glm::vec3 retDistTo(const glm::vec3& origin = { 0.0f, 0.0f, 0.0f });
 	glm::mat4 getModelMatrix();
 	glm::vec3 retCenter() const { return center; }
+	glm::vec3 retTranslatedCenter();
 
 	void setEnabled(bool state) { enabled = state; }
 	

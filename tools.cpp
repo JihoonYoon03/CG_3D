@@ -141,6 +141,11 @@ void Model::resetModelMatrix() {
 	}
 }
 
+glm::vec3 Model::retTranslatedCenter() {
+	glm::vec4 worldLocation = this->getModelMatrix() * glm::vec4(center, 1.0f);
+	return glm::vec3(worldLocation);
+}
+
 Model::~Model() {
 	delete color;
 	delete basis;

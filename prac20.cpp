@@ -370,7 +370,12 @@ GLvoid TimerFunc(int value)
 		turret2->translate(delta_turret2);
 	}
 	else {
-		body_bottom->translate(tank_trans * 0.1f);
+		glm::vec3 tank_pos = body_bottom->retTranslatedCenter();
+		tank_pos += tank_trans * 0.1f;
+		if (abs(tank_pos.x) + 2.0f < 10.0f && abs(tank_pos.z) + 1.5f < 10.0f) {
+			body_bottom->translate(tank_trans * 0.1f);
+			std::cout << "Tank Position: (" << tank_pos.x << ", " << tank_pos.z << ")\n";
+		}
 		if (middle_rot) {
 			body_middle->translate(-body_middle->retDistTo());
 			body_middle->rotate(middle_rot, glm::vec3(0.0f, 1.0f, 0.0f));
