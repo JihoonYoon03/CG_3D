@@ -47,6 +47,12 @@ Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3
 		vertex *= size;
 	}
 
+	/*for (auto& normal : normals) {
+		normal *= size;
+		normal = glm::normalize(normal);
+	}*/
+
+
 	glm::vec3 min_pos(FLT_MAX), max_pos(-FLT_MAX);
 	for (const auto& vertex : vertices) {
 		min_pos = glm::min(min_pos, vertex);

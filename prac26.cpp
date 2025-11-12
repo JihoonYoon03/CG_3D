@@ -14,7 +14,6 @@
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
-GLvoid KeyboardUp(unsigned char key, int x, int y);
 GLvoid MouseMotion(int x, int y);
 GLvoid TimerFunc(int value);
 
@@ -99,28 +98,23 @@ GLuint shaderProgramID; //--- 세이더 프로그램 이름
 GLuint vertexShader; //--- 버텍스 세이더 객체
 GLuint fragmentShader; //--- 프래그먼트 세이더 객체
 
-Model* sun, * planet[3], * moon[3];
+Model* sun, * planet[3], * moon[3], *light;
 Orbit* orbit_sun[3];
 Orbit* orbit_planet[3];
 DisplayBasis* XYZ;
 
-glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
+glm::vec3 bgColor = { 0.0f, 0.0f, 0.0f };
 
-glm::vec3 lightPos = { 0.0f, 0.0f, 5.0f };
+glm::vec3 lightPos = { 0.0f, 0.0f, 2.0f };
 glm::vec3 lightColor = { 1.0f, 1.0f, 1.0f };
 
 // 변환 수치
 GLfloat orbit_radius_sun = 2.0f, orbit_radius_planet = 0.8f;
+GLfloat light_rotation_delta = 0.0f;
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
-GLfloat z_rotate = 0.0f;
 
-// 수치 변화량
 GLfloat planet_speed[3];
 GLfloat moon_speed[3];
-glm::vec3 sun_translate(0.0f, 0.0f, 0.0f);
-GLfloat z_rotate_speed = 0.0f;
-bool isOrtho = false, isWire = false;
-char lastScaleKey = ' ';
 
 //--- 메인 함수
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -145,6 +139,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	// 데이터 초기화
 	XYZ = new DisplayBasis(2.0f);
 	sun = new Model("Models/Sphere.obj", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	light = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 0.0f, 1.0f));
 	for (int i = 0; i < 3; i++) {
 		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
 		orbit_sun[i] = new Orbit(glm::vec3(0.2f, 0.5f, 0.2f));
@@ -168,13 +163,12 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 		moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
 		moon_speed[i] = rand() / static_cast<GLfloat>(RAND_MAX / 1.5f) + 0.2f; // 0.2 ~ 1.7
 	}
-	glUniform1f(glGetUniformLocation(shaderProgramID, "shininess"), 32.0f);
+	glUniform1f(glGetUniformLocation(shaderProgramID, "shininess"), 128.0f);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "viewPos"), 0.0f, 0.0f, 10.0f);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
-	glutKeyboardUpFunc(KeyboardUp);
 	glutMotionFunc(MouseMotion);
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
@@ -195,12 +189,11 @@ GLvoid drawScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
-	glUniform3f(glGetUniformLocation(shaderProgramID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "lightColor"), lightColor.r, lightColor.g, lightColor.b);
+	glUniform3f(glGetUniformLocation(shaderProgramID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 
 	glm::mat4 projection;
-	if (isOrtho) projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
-	else projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	glm::vec3 EYE = glm::vec3(0.0f, 0.0f, 10.0f);
@@ -216,32 +209,24 @@ GLvoid drawScene()
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "world"), 1, GL_FALSE, glm::value_ptr(world));
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
-
 	XYZ->Render();
 
-	glm::mat4 sun_model = sun->getModelMatrix();
-	glm::vec3 sun_position = glm::vec3(sun_model[3]); // 변환 행렬 추출
-
-	glm::mat4 z_rot_matrix =
-		glm::translate(glm::mat4(1.0f), sun_position)
-		* glm::rotate(glm::mat4(1.0f), glm::radians(z_rotate), glm::vec3(0.0f, 0.0f, 1.0f))
-		* glm::translate(glm::mat4(1.0f), -sun_position);
-
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(sun_model));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(sun->getModelMatrix()));
 	sun->Render();
-	for (int i = 0; i < 3; i++) {
-		// sun->rotate(z_rotate_speed, glm::vec3(0.0f, 0.0f, 1.0f));
 
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot_matrix * orbit_sun[i]->getModelMatrix()));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(light->getModelMatrix()));
+	light->Render();
+	for (int i = 0; i < 3; i++) {
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(orbit_sun[i]->getModelMatrix()));
 		orbit_sun[i]->Render();
 
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot_matrix * planet[i]->getModelMatrix()));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(planet[i]->getModelMatrix()));
 		planet[i]->Render();
 
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot_matrix * orbit_planet[i]->getModelMatrix()));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(orbit_planet[i]->getModelMatrix()));
 		orbit_planet[i]->Render();
 
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(z_rot_matrix * moon[i]->getModelMatrix()));
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(moon[i]->getModelMatrix()));
 		moon[i]->Render();
 	}
 
@@ -258,84 +243,20 @@ GLvoid Reshape(int w, int h)
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
-	case 'p': case 'P':
-		// 직각/원근 투영
-		isOrtho = key == 'p' ? true : false;
+	case 'c':
+		lightColor = randColor();
 		break;
-	case 'm':
-		// 솔리드
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		break;
-	case 'M':
-		// 와이어
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		break;
-	case 'w':
-		// sun y+
-		if (sun_translate.y <= 0) sun_translate.y += 0.1f;
-		break;
-	case 's':
-		// sun y- 
-		if (sun_translate.y >= 0) sun_translate.y -= 0.1f;
-		break;
-	case 'a':
-		// sun x-
-		if (sun_translate.x >= 0) sun_translate.x -= 0.1f;
-		break;
-	case 'd':
-		// sun x+
-		if (sun_translate.x <= 0) sun_translate.x += 0.1f;
-		break;
-	case '=':
-		// sun z+
-		if (sun_translate.z <= 0) sun_translate.z += 0.1f;
-		break;
-	case '-':
-		// sun z-
-		if (sun_translate.z >= 0) sun_translate.z -= 0.1f;
-		break;
-	case 'y': case 'Y':
-		// 궤도 반지름 증감
-		// 먼저 기본값으로 리셋
-		for (int i = 0; i < 3; i++) {
-			orbit_sun[i]->setDefScale(glm::vec3(orbit_radius_sun + i, 1.0f, orbit_radius_sun + i));
-			orbit_planet[i]->setDefScale(glm::vec3(orbit_radius_planet, 1.0f, orbit_radius_planet));
-
-			planet[i]->setDefTranslate(glm::vec3((orbit_radius_sun + i), 0.0f, 0.0f));
-			moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
-		}
-
-		// 그 다음 증감 (이전 입력 키가 없거나 다를 때만)
-		if (lastScaleKey != key) {
-			GLfloat offset = key == 'y' ? 1.4f : 0.8f;
-			for (int i = 0; i < 3; i++) {
-				orbit_sun[i]->setDefScale(glm::vec3((orbit_radius_sun + i) * offset, 1.0f, (orbit_radius_sun + i) * offset));
-				orbit_planet[i]->setDefScale(glm::vec3(orbit_radius_planet * offset, 1.0f, orbit_radius_planet * offset));
-
-				planet[i]->setDefTranslate(glm::vec3(((orbit_radius_sun + i) * offset), 0.0f, 0.0f));
-				moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet * offset, 0.0f, 0.0f));
-			}
-			lastScaleKey = key;
-		}
-		else {
-			lastScaleKey = ' ';
-		}
-		break;
-	case 'z':
-		// z축 +회전
-		if (z_rotate_speed <= 0.0f)
-			z_rotate_speed = 1.0f;
+	case 'r':
+		if (light_rotation_delta)
+			light_rotation_delta = 0;
 		else
-			z_rotate_speed = 0.0f;
+			light_rotation_delta = 1.0f;
 		break;
-	case 'Z':
-		// z축 -회전
-		if (z_rotate_speed >= 0.0f)
-			z_rotate_speed = -1.0f;
+	case 'R':
+		if (light_rotation_delta)
+			light_rotation_delta = 0;
 		else
-			z_rotate_speed = 0.0f;
-		break;
-	case 'l':
+			light_rotation_delta = -1.0f;
 		break;
 	case 'q':
 		exit(0);
@@ -343,35 +264,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	}
 }
 
-GLvoid KeyboardUp(unsigned char key, int x, int y)
-{
-	switch (key) {
-	case 'w':
-		if (sun_translate.y >= 0.1f) sun_translate.y -= 0.1f;
-		break;
-	case 's':
-		if (sun_translate.y <= -0.1f) sun_translate.y += 0.1f;
-		break;
-	case 'a':
-		if (sun_translate.x <= -0.1f) sun_translate.x += 0.1f;
-		break;
-	case 'd':
-		if (sun_translate.x >= 0.1f) sun_translate.x -= 0.1f;
-		break;
-	case '=':
-		if (sun_translate.z >= 0.1f) sun_translate.z -= 0.1f;
-		break;
-	case '-':
-		if (sun_translate.z <= -0.1f) sun_translate.z += 0.1f;
-		break;
-	}
-}
-
 GLvoid TimerFunc(int value)
 {
-	sun->translate(sun_translate);
-	z_rotate += z_rotate_speed;
-
+	glm::mat4 light_trans_mat = glm::translate(glm::mat4(1.0f), -sun->retDistTo());
+	light_trans_mat = glm::rotate(light_trans_mat, glm::radians(light_rotation_delta), glm::vec3(0.0f, 1.0f, 0.0f));
+	light_trans_mat = glm::translate(light_trans_mat, sun->retDistTo());
+	lightPos = glm::vec3(light_trans_mat * glm::vec4(lightPos, 1.0f));
+	light->rotate(light_rotation_delta, glm::vec3(0.0f, 1.0f, 0.0f));
 	for (int i = 0; i < 3; i++) {
 		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
 		planet[i]->rotate(-offset, glm::vec3(0.0f, 0.0f, 1.0f));

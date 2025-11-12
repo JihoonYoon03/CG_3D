@@ -12,7 +12,7 @@ uniform float shininess;
 
 void main ()
 {
-	float ambientLight = 0.5;
+	float ambientLight = 0.3;
 	vec3 ambient = ambientLight * lightColor;
 
 	vec3 normVector = normalize(Normal);
@@ -24,8 +24,9 @@ void main ()
 	vec3 reflectDir = reflect(-lightDir, normVector);
 	float specularLight = max(dot(viewDir, reflectDir), 0.0);
 	specularLight = pow(specularLight, shininess);
+	vec3 specular = specularLight * lightColor;
 
-	vec3 result = (ambient + diffuse + specularLight) * color;
+	vec3 result = (ambient + diffuse + specular) * color;
 
 	fragColor = vec4(result, 1.0);
 }
