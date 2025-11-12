@@ -87,7 +87,7 @@ glm::vec3 turret1_end_pos{ 0.0f, 0.0f, 0.0f }, turret2_end_pos{ 0.0f, 0.0f, 0.0f
 GLfloat camera_rotY_self_delta = 0.0f, camera_rotY_orbit_delta = 0.0f;
 glm::vec3 camera_delta{ 0.0f, 0.0f, 0.0f };
 int turret_change_frame = 0;
-bool turret_change = false;
+bool turret_change = false, timer_pause = false;
 const unsigned int TURRET_CHANGE_DURATION = 60;
 
 //--- 메인 함수
@@ -275,6 +275,10 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		else
 			flag_rot = 0;
 		break;
+	case 'o':
+		timer_pause = !timer_pause;
+		if (!timer_pause) glutTimerFunc(1000 / 60, TimerFunc, 1);
+		break;
 	case 'q':
 		exit(0);
 		break;
@@ -368,5 +372,5 @@ GLvoid TimerFunc(int value)
 	}
 
 	glutPostRedisplay();
-	glutTimerFunc(1000 / 60, TimerFunc, 1);
+	if (!timer_pause) glutTimerFunc(1000 / 60, TimerFunc, 1);
 }
