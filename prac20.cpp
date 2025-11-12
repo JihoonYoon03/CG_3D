@@ -159,7 +159,7 @@ GLvoid drawScene()
 	glm::mat4 camera_rot_self = glm::rotate(glm::mat4(1.0f), glm::radians(camera_rotY_self), glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::vec3 AT = camera_pos + glm::vec3(camera_rot_self * glm::vec4(z_normal_inverse, 0.0f));
 	glm::mat4 view = glm::lookAt(camera_pos, AT, glm::vec3(0.0f, 1.0f, 0.0f));
-	//view = glm::rotate(view, glm::radians(-camera_rotY_orbit), glm::vec3(0.0f, 1.0f, 0.0f));
+	view = glm::rotate(view, glm::radians(-camera_rotY_orbit), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 world = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -235,6 +235,18 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			camera_rotY_self_delta = -1;
 		else
 			camera_rotY_self_delta = 0;
+		break;
+	case 'r':
+		if (camera_rotY_orbit_delta == 0)
+			camera_rotY_orbit_delta = 1;
+		else
+			camera_rotY_orbit_delta = 0;
+		break;
+	case 'R':
+		if (camera_rotY_orbit_delta == 0)
+			camera_rotY_orbit_delta = -1;
+		else
+			camera_rotY_orbit_delta = 0;
 		break;
 	case 't':
 		if (middle_rot == 0)
