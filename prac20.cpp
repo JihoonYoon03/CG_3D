@@ -279,6 +279,29 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		timer_pause = !timer_pause;
 		if (!timer_pause) glutTimerFunc(1000 / 60, TimerFunc, 1);
 		break;
+	case 'c':
+		if (turret_change) break;
+
+		camera_rotY_self = 0.0f, camera_rotY_orbit = 0.0f, middle_rot = 0.0f, cannon_rot = 0.0f, flag_rot = 0.0f;
+		camera_pos = { 0.0f, 2.0f, 0.0f };
+		tank_trans = { 0.0f, 0.0f, 0.0f };
+		turret1_start_pos = { 0.0f, 0.0f, 0.0f }, turret2_start_pos = { 0.0f, 0.0f, 0.0f };
+		turret1_end_pos = { 0.0f, 0.0f, 0.0f }, turret2_end_pos = { 0.0f, 0.0f, 0.0f };
+
+		camera_rotY_self_delta = 0.0f, camera_rotY_orbit_delta = 0.0f;
+		camera_delta = { 0.0f, 0.0f, 0.0f };
+		turret_change_frame = 0;
+		turret_change = false, timer_pause = false;
+
+		body_bottom->resetModelMatrix();
+		body_middle->resetModelMatrix();
+		turret1->resetModelMatrix();
+		turret2->resetModelMatrix();
+		cannon1->resetModelMatrix();
+		cannon2->resetModelMatrix();
+		flag1->resetModelMatrix();
+		flag2->resetModelMatrix();
+		break;
 	case 'q':
 		exit(0);
 		break;
