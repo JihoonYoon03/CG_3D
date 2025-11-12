@@ -26,6 +26,7 @@ class DisplayBasis;
 class Model {
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::uvec3> faces;
+	std::vector<glm::vec3> normals;
 	glm::vec3 center;
 	DisplayBasis* basis;
 
@@ -44,7 +45,7 @@ class Model {
 	// 변환 기준이 되는 부모 모델 (nullptr이면 적용 X)
 	Model* parent = nullptr;
 
-	GLuint VAO, VBO, EBO, COLOR;
+	GLuint VAO, VBO, EBO, COLOR, NORMAL;
 
 	// 비활성 상태에선 동작 X
 	bool enabled = true;

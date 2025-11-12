@@ -31,6 +31,11 @@ Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3
 
 			faces.push_back(face);
 		}
+		else if (prefix == "vn") {
+			glm::vec3 normal;
+			iss >> normal.x >> normal.y >> normal.z;
+			normals.push_back(normal);
+		}
 	}
 	file.close();
 
@@ -75,6 +80,12 @@ Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3
 
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, NORMAL);
+	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
+
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
+	glEnableVertexAttribArray(2);
 
 	basis = new DisplayBasis(0.2f, center);
 }
