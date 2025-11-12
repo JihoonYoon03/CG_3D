@@ -67,6 +67,7 @@ Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
 	glGenBuffers(1, &COLOR);
+	glGenBuffers(1, &NORMAL);
 
 	glBindVertexArray(VAO);
 
