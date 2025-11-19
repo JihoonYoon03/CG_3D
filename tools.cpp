@@ -47,11 +47,6 @@ Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3
 		vertex *= size;
 	}
 
-	/*for (auto& normal : normals) {
-		normal *= size;
-		normal = glm::normalize(normal);
-	}*/
-
 
 	glm::vec3 min_pos(FLT_MAX), max_pos(-FLT_MAX);
 	for (const auto& vertex : vertices) {
@@ -67,6 +62,7 @@ Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
 	glGenBuffers(1, &COLOR);
+	glGenBuffers(1, &NORMAL);
 
 	glBindVertexArray(VAO);
 

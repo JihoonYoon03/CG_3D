@@ -14,7 +14,7 @@
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
-GLvoid MouseMotion(int x, int y);
+GLvoid PassiveMouseMotion(int x, int y);
 GLvoid TimerFunc(int value);
 
 class Orbit {
@@ -105,8 +105,10 @@ DisplayBasis* XYZ;
 
 glm::vec3 bgColor = { 0.0f, 0.0f, 0.0f };
 
-glm::vec3 lightPos = { 0.0f, 0.0f, 2.0f };
+glm::vec3 lightPos = { 0.0f, 0.0f, 4.0f };
 glm::vec3 lightColor = { 1.0f, 1.0f, 1.0f };
+GLfloat shininess = 32.0f;
+glm::vec3 viewPos = { 0.0f, 0.0f, 10.0f };
 
 // 변환 수치
 GLfloat orbit_radius_sun = 2.0f, orbit_radius_planet = 0.8f;
@@ -139,7 +141,9 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	// 데이터 초기화
 	XYZ = new DisplayBasis(2.0f);
 	sun = new Model("Models/Sphere.obj", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	light = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 0.0f, 1.0f));
+	light = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 1.0f, 1.0f));
+	light->setDefTranslate(glm::vec3{ 0.0f, 0.0f, 4.0f });
+
 	for (int i = 0; i < 3; i++) {
 		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
 		orbit_sun[i] = new Orbit(glm::vec3(0.2f, 0.5f, 0.2f));
@@ -163,13 +167,11 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 		moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
 		moon_speed[i] = rand() / static_cast<GLfloat>(RAND_MAX / 1.5f) + 0.2f; // 0.2 ~ 1.7
 	}
-	glUniform1f(glGetUniformLocation(shaderProgramID, "shininess"), 128.0f);
-	glUniform3f(glGetUniformLocation(shaderProgramID, "viewPos"), 0.0f, 0.0f, 10.0f);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
-	glutMotionFunc(MouseMotion);
+	glutPassiveMotionFunc(PassiveMouseMotion);
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
 
@@ -191,12 +193,14 @@ GLvoid drawScene()
 
 	glUniform3f(glGetUniformLocation(shaderProgramID, "lightColor"), lightColor.r, lightColor.g, lightColor.b);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+	glUniform1f(glGetUniformLocation(shaderProgramID, "shininess"), shininess);
+	glUniform3f(glGetUniformLocation(shaderProgramID, "viewPos"), viewPos.x, viewPos.y, viewPos.z);
 
 	glm::mat4 projection;
 	projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-	glm::vec3 EYE = glm::vec3(0.0f, 0.0f, 10.0f);
+	glm::vec3 EYE = glm::vec3(0.0f, 0.0f, 5.0f);
 	glm::vec3 watching = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::mat4 cam_rotation = glm::rotate(glm::mat4(1.0f), glm::radians(-m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
 	cam_rotation = glm::rotate(cam_rotation, glm::radians(-m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -204,9 +208,6 @@ GLvoid drawScene()
 
 	glm::mat4 view = glm::lookAt(EYE, AT, glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-
-	glm::mat4 world = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "world"), 1, GL_FALSE, glm::value_ptr(world));
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 	XYZ->Render();
@@ -266,9 +267,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 GLvoid TimerFunc(int value)
 {
-	glm::mat4 light_trans_mat = glm::translate(glm::mat4(1.0f), -sun->retDistTo());
-	light_trans_mat = glm::rotate(light_trans_mat, glm::radians(light_rotation_delta), glm::vec3(0.0f, 1.0f, 0.0f));
-	light_trans_mat = glm::translate(light_trans_mat, sun->retDistTo());
+	glm::mat4 light_trans_mat = glm::rotate(glm::mat4(1.0f), glm::radians(light_rotation_delta), glm::vec3(0.0f, 1.0f, 0.0f));
 	lightPos = glm::vec3(light_trans_mat * glm::vec4(lightPos, 1.0f));
 	light->rotate(light_rotation_delta, glm::vec3(0.0f, 1.0f, 0.0f));
 	for (int i = 0; i < 3; i++) {
@@ -284,7 +283,7 @@ GLvoid TimerFunc(int value)
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }
 
-GLvoid MouseMotion(int x, int y)
+GLvoid PassiveMouseMotion(int x, int y)
 {
 	m_rotationX += (x - winWidth / 2) * 0.1f;
 	m_rotationY += (y - winHeight / 2) * 0.1f;
