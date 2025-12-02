@@ -157,6 +157,7 @@ void Model::Render() {
 	if (!enabled) return;
 	glBindVertexArray(VAO);
 	glDrawArrays(GL_TRIANGLES, 0, renderVertices.size());
+	
 	if (debug_mode_collider) {
 		if (bounding_box != nullptr) bounding_box->Render();
 		if (bounding_sphere != nullptr) bounding_sphere->Render();
@@ -374,6 +375,7 @@ GLuint loadTexture(const std::string& filename) {
 	GLuint textureID;
 	glGenTextures(1, &textureID);
 	glBindTexture(GL_TEXTURE_2D, textureID);
+	std::cout << "Generated Texture ID: " << textureID << std::endl;
 
 	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 
