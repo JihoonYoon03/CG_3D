@@ -1,10 +1,14 @@
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <random>
 #include <queue>
+#include <tuple>
+#include <chrono>
 #include <gl/glew.h>
 #include <gl/freeglut.h>
 #include <gl/freeglut_ext.h>
@@ -12,9 +16,7 @@
 #include <gl/glm/ext.hpp>
 #include <gl/glm/gtc/matrix_transform.hpp>
 
-struct rtPos {
-	GLfloat x1, y1, x2, y2;
-};
+extern bool debug_mode_collider;
 
 struct ColoredVertex {
 	glm::vec3 pos;
@@ -23,55 +25,143 @@ struct ColoredVertex {
 
 class DisplayBasis;
 
+class BoxCollider;
+class SphereCollider;
+
+enum CollideMode {
+	NONE = 0b00000000,
+	BOX = 0b00000001,
+	SPHERE = 0b00000010
+};
+
+/*
+Model 클래스 사용법
+
+1.	생성자 인자
+	(모델 들어있는 파일 경로, 크기, 기본 색상)
+	크기와 기본 색상은 생략 가능 (기본값: (1,1,1), (0.8,0.8,0.8))
+	크기 설정은 정점 데이터를 바꾸는 것이기에 영구적으로 적용됨
+
+2.	모델 변환 함수들
+	setDef~(): modelMatrix(=월드 변환) 적용 이전에 먼저 적용할 변환 설정 (무조건 SRT 순서로 적용됨)
+	scale(), rotate(), translate(): transformQueue(변환 큐)에 변환 행렬 추가, 추가하는 순서대로 변환 적용됨
+	setParent(): 부모 모델을 설정함. 사용 안할 시에는 본인에 대한 변환만, 설정 시엔 부모 모델의 변환도 함께 적용됨
+	getModelMatrix(): modelMatrix에 변환 큐 안의 변환 행렬들을 모두 적용한 뒤 부모 모델이 있다면 부모 모델 변환도 적용 후 반환
+
+3.	활성 상태
+	enabled 상태가 활성 여부임. 비활성 상태이면 비활성 이후 변환과 렌더링 모두 작동 안함
+*/
+
 class Model {
-	std::vector<glm::vec3> vertices;
-	std::vector<glm::uvec3> faces;
-	std::vector<glm::vec3> normals;
-	glm::vec3 center;
-	DisplayBasis* basis;
+	// 콜라이더는 해당 객체에 종속되므로 private
+	// Model의 자식 클래스에선 접근 불가
+private:
+	BoxCollider* bounding_box = nullptr;
+	SphereCollider* bounding_sphere = nullptr;
+protected:
+	// 정점 속성
+	std::vector<glm::uvec3> faces;		// 삼각형의 정점 인덱스 순서
+	std::vector<glm::vec3>* color;		// 기본 정점 색상, 텍스쳐 적용 할 경우 불필요
 
-	std::vector<glm::vec3>* color;
+	std::vector<glm::vec3> renderVertices;  // 실제 렌더링에 사용할 정점
+	std::vector<glm::vec2> renderTexCoords; // 실제 렌더링에 사용할 텍스처 좌표
+	std::vector<glm::vec3> renderNormals;	// 실제 렌더링에 사용할 법선 벡터
 
-	// 변환행렬 적용 이전에 SRT순으로 모델 변환
-	glm::mat4 default_scale = glm::mat4(1.0f);
-	glm::mat4 default_rotate = glm::mat4(1.0f);
-	glm::mat4 default_translate = glm::mat4(1.0f);
+	glm::vec3 center{ 0, 0, 0 };		// 모델 중심점 (정점 좌표값의 최대/최소값 기준 중앙임). 이동 변환 상시 반영
 
-	// 로컬 모델 변환
+	// 모델 변환
+	glm::mat4 defScaleMatrix = glm::mat4(1.0f);	// 모델 기본 크기 조정
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
+
 	// modelMatrix에 적용할 변환 행렬 큐
 	std::queue<glm::mat4> transformQueue;
 
 	// 변환 기준이 되는 부모 모델 (nullptr이면 적용 X)
 	Model* parent = nullptr;
 
-	GLuint VAO, VBO, EBO, COLOR, NORMAL;
+	// OpenGL 버퍼 객체
+	GLuint VAO, VERTEX, FACE, COLOR, NORMAL, TEXCOORD, TEXTURE_ID = -1;
 
 	// 비활성 상태에선 동작 X
 	bool enabled = true;
 public:
-	Model(const std::string& filename, const glm::vec3& size = { 1.0f, 1.0f, 1.0f }, const glm::vec3& defColor = { 0.8f, 0.8f, 0.8f });
+	Model(const std::string& filename, const glm::vec3& size = { 1.0f, 1.0f, 1.0f }, const glm::vec3& defColor = { 1.0f, 1.0f, 1.0f }, const CollideMode& collider = NONE,
+		const std::string& texture = "");
 
 	void setParent(Model* parent);
 
-	void setDefScale(const glm::vec3& ds);
-	void setDefRotate(const glm::mat4& dr);
-	void setDefTranslate(const glm::vec3& dt);
-	
-	void scale(const glm::vec3& scaleFactor);
-	void rotate(GLfloat angle, const glm::vec3& axis);
-	void translate(const glm::vec3& delta);
+	// origin 기준 변환
+	// origin = retCenter()로 사용하면 모델 중심 기준 변환
+	void scale(const glm::vec3& ds, const glm::vec3& origin = { 0, 0, 0 });
+	void rotate(const glm::vec3& dr, const glm::vec3& origin = { 0, 0, 0 });
+	void translate(const glm::vec3& dt, const glm::vec3& offset = { 0.0f, 0.0f, 0.0f }); // offset: 변환 적용 이전, 현재 위치 조정. retDistTo() 입력 시 좌표 dt로 초기화 가능
 
-	void Render();
+	virtual void Render();
 	void resetModelMatrix();
 	glm::vec3 retDistTo(const glm::vec3& origin = { 0.0f, 0.0f, 0.0f });
-	glm::mat4 getModelMatrix();
-	glm::vec3 retCenter() const { return center; }
-	glm::vec3 retTranslatedCenter();
+
+	virtual glm::mat4 getModelMatrix();		// 리턴값 커스텀 가능
+	virtual glm::mat4 retParentMatrix();	// 리턴값 커스텀 가능
+
+	GLuint getTexture() { return TEXTURE_ID; }
+
+	BoxCollider* getBoxCollider() { if (bounding_box != nullptr) return bounding_box; }
+	SphereCollider* getSphereCollider() { if (bounding_sphere != nullptr) return bounding_sphere; }
+
+	// 충돌 처리 함수
+	virtual void HandleCollisionRange(const std::string& group, Model* other) {};
+	virtual void HandleCollisionRaycast(const std::string& group, Model* other) {};
 
 	void setEnabled(bool state) { enabled = state; }
-	
-	~Model();
+
+	~Model() {
+		delete color;
+		if (bounding_box != nullptr) {
+			delete bounding_box;
+			bounding_box = nullptr;
+		}
+		if (bounding_sphere != nullptr) {
+			delete bounding_sphere;
+			bounding_sphere = nullptr;
+		}
+	}
+};
+
+// protected 상속 => 외부에서 Model 기능 접근 불가
+class BoxCollider : protected Model {
+	GLfloat width, height, depth;
+public:
+	BoxCollider(Model* origin, const GLfloat& w, const GLfloat& h, const GLfloat& d);
+	void Render() override;
+	// 박스 충돌 체크는 SAT 알고리즘 사용 예정
+};
+
+class SphereCollider : protected Model {
+	GLfloat radius;
+public:
+	SphereCollider(Model* origin, const GLfloat& radius);
+	GLfloat getRadius() { return radius; }
+	void Render() override;
+};
+
+class Ray {
+	// Ray는 월드 좌표 기준
+	glm::vec3 origin;
+	glm::vec3 direction;
+
+	int penetrate_force = 1; // 최대 관통 횟수
+
+public:
+	Ray(const glm::vec3& ori, const glm::vec3& dir);
+	Ray& operator=(const Ray& other);
+
+	glm::vec3 getOrigin() const { return origin; }
+	glm::vec3 getDirection() const { return direction; }
+
+	int getPenetrationCount() const { return penetrate_force; }
+
+	template<typename T>
+	void HandleCollisionRaycast(const std::string& group, T* target) {}
 };
 
 class DisplayBasis {
@@ -84,15 +174,22 @@ public:
 	void Render();
 };
 
-glm::vec3 randColor();
-
 void mPosToGL(GLuint winWidth, GLuint winHeight, int mx, int my, GLfloat& xGL, GLfloat& yGL);
-bool isMouseIn(rtPos& pos, GLuint winWidth, GLuint winHeight, int mx, int my);
-bool CircleCollider(const glm::vec3& center, GLfloat distCap, GLfloat xGL, GLfloat yGL);
-bool LineCollider(const glm::vec3& p1, const glm::vec3& p2, GLfloat distCap, GLfloat xGL, GLfloat yGL);
-bool RectCollider(const glm::vec3& p1, const glm::vec3& p2, GLfloat xGL, GLfloat yGL);
 
 std::string read_file(const std::string& filename);
 void make_vertexShaders(GLuint& vertexShader, const std::string& shaderName);
 void make_fragmentShaders(GLuint& fragmentShader, const std::string& shaderName);
 GLuint make_shaderProgram(const GLuint& vertexShader, const GLuint& fragmentShader);
+GLuint loadTexture(const std::string& filename);
+
+class DebugCube : public Model {
+public:
+	glm::vec3 velocity;
+	DebugCube(const glm::vec3& pos, const glm::vec3& dir)
+		: Model("models/Cube.obj", glm::vec3(0.01f), glm::vec3(1.0f, 0.0f, 0.0f), NONE), velocity(glm::normalize(dir) * 0.05f) {
+		translate(pos);
+	}
+	void update() {
+		translate(velocity);
+	}
+};

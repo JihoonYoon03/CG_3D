@@ -134,12 +134,14 @@
     <None Include="fragment_prac18.glsl" />
     <None Include="fragment_prac19.glsl" />
     <None Include="fragment_prac26.glsl" />
+    <None Include="fragment_prac29.glsl" />
     <None Include="vertex.glsl" />
     <None Include="vertex_prac16.glsl" />
     <None Include="vertex_prac17.glsl" />
     <None Include="vertex_prac18.glsl" />
     <None Include="vertex_prac19.glsl" />
     <None Include="vertex_prac26.glsl" />
+    <None Include="vertex_prac29.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -164,10 +166,13 @@
     <ClCompile Include="prac20.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="prac25.cpp" />
+    <ClCompile Include="prac25.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="prac26.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="prac29.cpp" />
     <ClCompile Include="tools.cpp" />
   </ItemGroup>
   <ItemGroup>

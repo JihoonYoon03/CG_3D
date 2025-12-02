@@ -1,11 +1,19 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include "tools.h"
 
-Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3& defColor) {
+bool debug_mode_collider = false;
+
+Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3& defColor, const CollideMode& collider, const std::string& texture) {
 	std::ifstream file(filename);
 	if (!file.is_open()) {
 		std::cerr << "Error opening file: " << filename << std::endl;
 		exit(EXIT_FAILURE);
 	}
+
+	std::vector<glm::vec3> tempVertices;
+	std::vector<glm::vec2> tempTexCoords;
+	std::vector<glm::vec3> tempNormals;
 
 	std::string line;
 	while (std::getline(file, line)) {
@@ -17,117 +25,146 @@ Model::Model(const std::string& filename, const glm::vec3& size, const glm::vec3
 		if (prefix == "v") {
 			glm::vec3 vertex;
 			iss >> vertex.x >> vertex.y >> vertex.z;
-			vertices.push_back(vertex);
+			tempVertices.push_back(vertex);
 		}
-		else if (prefix == "f") {
-			std::string v1, v2, v3;
-			iss >> v1 >> v2 >> v3;
-
-			// "정점/텍스처/노멀"에서 정점 인덱스만 추출
-			glm::uvec3 face;
-			face.x = std::stoi(v1.substr(0, v1.find('/'))) - 1;
-			face.y = std::stoi(v2.substr(0, v2.find('/'))) - 1;
-			face.z = std::stoi(v3.substr(0, v3.find('/'))) - 1;
-
-			faces.push_back(face);
+		else if (prefix == "vt") {
+			glm::vec2 texCoord;
+			iss >> texCoord.x >> texCoord.y;
+			tempTexCoords.push_back(texCoord);
 		}
 		else if (prefix == "vn") {
 			glm::vec3 normal;
 			iss >> normal.x >> normal.y >> normal.z;
-			normals.push_back(normal);
+			tempNormals.push_back(normal);
+		}
+		else if (prefix == "f") {
+			std::string v1, v2, v3;
+			iss >> v1 >> v2 >> v3;
+			auto parse_face = [](const std::string& s) {
+				size_t p1 = s.find('/');
+				size_t p2 = s.find('/', p1 + 1);
+				int vi = std::stoi(s.substr(0, p1)) - 1;
+				int ti = std::stoi(s.substr(p1 + 1, p2 - p1 - 1)) - 1;
+				int ni = std::stoi(s.substr(p2 + 1)) - 1;
+				return std::make_tuple(vi, ti, ni);
+				};
+			int vi[3], ti[3], ni[3];
+			std::tie(vi[0], ti[0], ni[0]) = parse_face(v1);
+			std::tie(vi[1], ti[1], ni[1]) = parse_face(v2);
+			std::tie(vi[2], ti[2], ni[2]) = parse_face(v3);
+
+			for (int i = 0; i < 3; ++i) {
+				renderVertices.push_back(tempVertices[vi[i]]);
+				renderTexCoords.push_back(tempTexCoords[ti[i]]);
+				renderNormals.push_back(tempNormals[ni[i]]);
+			}
 		}
 	}
 	file.close();
 
-	std::cout << "Loaded " << vertices.size() << " vertices, "
-		<< faces.size() << " faces" << std::endl;  // 디버그 출력
 
-	// 모델 크기 조정
-	for (auto& vertex : vertices) {
-		vertex *= size;
-	}
-
-
+	// 센터 구하기
 	glm::vec3 min_pos(FLT_MAX), max_pos(-FLT_MAX);
-	for (const auto& vertex : vertices) {
+	for (const auto& vertex : renderVertices) {
 		min_pos = glm::min(min_pos, vertex);
 		max_pos = glm::max(max_pos, vertex);
 	}
 
 	center = (min_pos + max_pos) * 0.5f;
+	float epsilon = 1e-6f;
+	if (std::abs(center.x) < epsilon) center.x = 0.0f;
+	if (std::abs(center.y) < epsilon) center.y = 0.0f;
+	if (std::abs(center.z) < epsilon) center.z = 0.0f;
 
-	color = new std::vector<glm::vec3>(vertices.size(), defColor);
+	color = new std::vector<glm::vec3>(renderVertices.size(), defColor);
+
+	// 모델 크기 조정
+	defScaleMatrix = glm::scale(defScaleMatrix, size);
+
+	glm::vec3 WHD = max_pos - min_pos;
+	WHD *= size; // 크기 조정 반영
+	GLfloat radius = std::max({ WHD.x, WHD.y, WHD.z }) * 0.5f;
+	if (collider & BOX)
+		bounding_box = new BoxCollider(this, WHD.x, WHD.y, WHD.z);
+	if (collider & SPHERE)
+		bounding_sphere = new SphereCollider(this, radius);
+
 
 	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
+	glGenBuffers(1, &VERTEX);
 	glGenBuffers(1, &COLOR);
 	glGenBuffers(1, &NORMAL);
+	glGenBuffers(1, &TEXCOORD);
 
 	glBindVertexArray(VAO);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3),
-		vertices.data(), GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, faces.size() * sizeof(glm::uvec3),
-		faces.data(), GL_STATIC_DRAW);
-
+	glBindBuffer(GL_ARRAY_BUFFER, VERTEX);
+	glBufferData(GL_ARRAY_BUFFER, renderVertices.size() * sizeof(glm::vec3), renderVertices.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, COLOR);
 	glBufferData(GL_ARRAY_BUFFER, color->size() * sizeof(glm::vec3), color->data(), GL_STATIC_DRAW);
-
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, NORMAL);
-	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
-
+	glBufferData(GL_ARRAY_BUFFER, renderNormals.size() * sizeof(glm::vec3), renderNormals.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
 	glEnableVertexAttribArray(2);
 
-	basis = new DisplayBasis(0.2f, center);
+	glBindBuffer(GL_ARRAY_BUFFER, TEXCOORD);
+	glBufferData(GL_ARRAY_BUFFER, renderTexCoords.size() * sizeof(glm::vec2), renderTexCoords.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (GLvoid*)0);
+	glEnableVertexAttribArray(3);
+
+	glBindVertexArray(0);
+
+	if (texture != "") TEXTURE_ID = loadTexture(texture);
 }
 
 void Model::setParent(Model* parent) {
 	if (enabled) this->parent = parent;
 }
 
-void Model::setDefScale(const glm::vec3& ds) {
-	if (enabled) default_scale = glm::scale(glm::mat4(1.0f), ds);
-}
-void Model::setDefRotate(const glm::mat4& dr) {
-	if (enabled) default_rotate = dr;
-}
-void Model::setDefTranslate(const glm::vec3& dt) {
-	if (enabled) default_translate = glm::translate(glm::mat4(1.0f), dt);
+void Model::scale(const glm::vec3& ds, const glm::vec3& origin) {
+	if (!enabled) return;
+	glm::vec3 dist = retDistTo(origin);
+	transformQueue.push(glm::translate(glm::mat4(1.0f), -dist));
+	transformQueue.push(glm::scale(glm::mat4(1.0f), ds));
+	transformQueue.push(glm::translate(glm::mat4(1.0f), dist));
 }
 
-void Model::scale(const glm::vec3& scaleFactor) {
-	if (enabled) transformQueue.push(glm::scale(glm::mat4(1.0f), scaleFactor));
+void Model::rotate(const glm::vec3& dr, const glm::vec3& origin) {
+	if (!enabled) return;
+	glm::vec3 dist = retDistTo(origin);
+	glm::mat4 rotate = glm::mat4(1.0f);
+	transformQueue.push(glm::translate(glm::mat4(1.0f), -dist));
+	rotate = glm::rotate(rotate, glm::radians(dr.x), glm::vec3(1, 0, 0));
+	rotate = glm::rotate(rotate, glm::radians(dr.y), glm::vec3(0, 1, 0));
+	rotate = glm::rotate(rotate, glm::radians(dr.z), glm::vec3(0, 0, 1));
+	transformQueue.push(rotate);
+	transformQueue.push(glm::translate(glm::mat4(1.0f), dist));
 }
 
-void Model::rotate(GLfloat angle, const glm::vec3& axis) {
-	if (enabled) transformQueue.push(glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis));
-}
-
-void Model::translate(const glm::vec3& delta) {
-	if (enabled) transformQueue.push(glm::translate(glm::mat4(1.0f), delta));
+void Model::translate(const glm::vec3& dt, const glm::vec3& offset) {
+	if (!enabled) return;
+	transformQueue.push(glm::translate(glm::mat4(1.0f), -offset));
+	transformQueue.push(glm::translate(glm::mat4(1.0f), dt));
 }
 
 void Model::Render() {
 	if (!enabled) return;
 	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, 0);
-
-	//basis->Render();
+	glDrawArrays(GL_TRIANGLES, 0, renderVertices.size());
+	if (debug_mode_collider) {
+		if (bounding_box != nullptr) bounding_box->Render();
+		if (bounding_sphere != nullptr) bounding_sphere->Render();
+	}
 }
 
 glm::vec3 Model::retDistTo(const glm::vec3& origin) {
-	glm::vec4 worldLocation = modelMatrix * default_translate * default_rotate * default_scale * glm::vec4(center, 1.0f);
+	glm::vec4 worldLocation = getModelMatrix() * glm::vec4(center, 1.0f);
 	return glm::vec3(worldLocation) - origin;
 }
 
@@ -136,15 +173,28 @@ glm::mat4 Model::getModelMatrix() {
 		modelMatrix = transformQueue.front() * modelMatrix;
 		transformQueue.pop();
 	}
-	
+
 	glm::mat4 parent_matrix(1.0f);
 	if (parent != nullptr) {
-		parent_matrix = parent->getModelMatrix();
+		parent_matrix = parent->retParentMatrix();
 	}
 
-	
-	// 모델 중심 변환 -> 모델 변환 -> 부모 변환
-	return parent_matrix * modelMatrix * default_translate * default_rotate * default_scale;
+	return parent_matrix * modelMatrix * defScaleMatrix;
+}
+
+// 모델 기본 크기 설정인 defScaleMatrix를 제외하고 반환
+glm::mat4 Model::retParentMatrix() {
+	while (!transformQueue.empty()) {
+		modelMatrix = transformQueue.front() * modelMatrix;
+		transformQueue.pop();
+	}
+
+	glm::mat4 parent_matrix(1.0f);
+	if (parent != nullptr) {
+		parent_matrix = parent->retParentMatrix();
+	}
+
+	return parent_matrix * modelMatrix;
 }
 
 void Model::resetModelMatrix() {
@@ -154,14 +204,42 @@ void Model::resetModelMatrix() {
 	}
 }
 
-glm::vec3 Model::retTranslatedCenter() {
-	glm::vec4 worldLocation = this->getModelMatrix() * glm::vec4(center, 1.0f);
-	return glm::vec3(worldLocation);
+
+
+BoxCollider::BoxCollider(Model* origin, const GLfloat& w, const GLfloat& h, const GLfloat& d) :
+	Model("models/Cube.obj", glm::vec3(w, h, d), glm::vec3(1.0f, 0.0f, 0.0f)), width(w), height(h), depth(d) {
+	setParent(origin);
 }
 
-Model::~Model() {
-	delete color;
-	delete basis;
+void BoxCollider::Render() {
+	if (!enabled) return;
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, 0);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+
+SphereCollider::SphereCollider(Model* origin, const GLfloat& radius) :
+	Model("models/Sphere.obj", glm::vec3(radius, radius, radius), glm::vec3(1.0f, 0.0f, 0.0f)), radius(radius) {
+	setParent(origin);
+}
+
+void SphereCollider::Render() {
+	if (!enabled) return;
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, 0);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+Ray::Ray(const glm::vec3& ori, const glm::vec3& dir) : origin(ori), direction(glm::normalize(dir)) {}
+
+Ray& Ray::operator=(const Ray& other) {
+	if (this == &other) return *this;
+	origin = other.origin;
+	direction = other.direction;
+	return *this;
 }
 
 DisplayBasis::DisplayBasis(GLfloat offset, const glm::vec3& origin) : origin(origin) {
@@ -195,90 +273,10 @@ void DisplayBasis::Render() {
 	glDrawArrays(GL_LINES, 0, 6);
 }
 
-glm::vec3 randColor() {
-	glm::vec3 color;
-	color.x = rand() / static_cast<GLfloat>(RAND_MAX);
-	color.y = rand() / static_cast<GLfloat>(RAND_MAX);
-	color.z = rand() / static_cast<GLfloat>(RAND_MAX);
-	return color;
-}
-
-rtPos randSquarePos(GLfloat offset) {
-	rtPos pos;
-	pos.x1 = rand() / static_cast<GLfloat>(RAND_MAX) * 2.0f - 1.0f;
-	pos.y1 = rand() / static_cast<GLfloat>(RAND_MAX) * 2.0f - 1.0f;
-
-	pos.x2 = pos.x1 + offset;
-	pos.y2 = pos.y1 - offset;
-	return pos;
-}
-
-rtPos randRectPos(GLfloat offset) {
-	rtPos pos;
-	pos.x1 = rand() / static_cast<GLfloat>(RAND_MAX) * 2.0f - 1.0f;
-	pos.y1 = rand() / static_cast<GLfloat>(RAND_MAX) * 2.0f - 1.0f;
-
-	pos.x2 = pos.x1 + (rand() / static_cast<GLfloat>(RAND_MAX) * 0.1f + offset);
-	pos.y2 = pos.y1 - (rand() / static_cast<GLfloat>(RAND_MAX) * 0.1f + offset);
-	return pos;
-}
-
 void mPosToGL(GLuint winWidth, GLuint winHeight, int mx, int my, GLfloat& xGL, GLfloat& yGL)
 {
 	xGL = (mx / (winWidth / 2.0f)) - 1.0f;
 	yGL = 1.0f - (my / (winHeight / 2.0f));
-}
-
-bool isMouseIn(rtPos& pos, GLuint winWidth, GLuint winHeight, int mx, int my)
-{
-	GLfloat xGL, yGL;
-	mPosToGL(winWidth, winHeight, mx, my, xGL, yGL);
-
-	if (xGL > pos.x1 && xGL < pos.x2 && yGL < pos.y1 && yGL > pos.y2) return true;
-	else return false;
-}
-
-bool CircleCollider(const glm::vec3& center, GLfloat distCap, GLfloat xGL, GLfloat yGL) {
-	GLfloat dist = sqrt((center.x - xGL) * (center.x - xGL) + (center.y - yGL) * (center.y - yGL));
-	if (dist < distCap) {
-		return true;
-	}
-	return false;
-}
-
-bool LineCollider(const glm::vec3& p1, const glm::vec3& p2, GLfloat distCap, GLfloat xGL, GLfloat yGL) {
-	GLfloat m;
-	m = (p2.y - p1.y) / (p2.x - p1.x);	// 기울기
-
-	// y - y1 = m(x - x1)
-	GLfloat xOnLine = (yGL - p1.y) / m + p1.x; // y좌표에 대응하는 x좌표
-	GLfloat yOnLine = m * (xGL - p1.x) + p1.y; // x좌표에 대응하는 y좌표
-
-	GLfloat minX = std::min(p1.x, p2.x) - distCap * 0.5f;
-	GLfloat maxX = std::max(p1.x, p2.x) + distCap * 0.5f;
-	GLfloat minY = std::min(p1.y, p2.y) - distCap * 0.5f;
-	GLfloat maxY = std::max(p1.y, p2.y) + distCap * 0.5f;
-
-	// 선분 범위 내에 있는지 확인
-	if (xGL < minX || xGL > maxX || yGL < minY || yGL > maxY) {
-		return false;
-	}
-
-	if (abs(xOnLine - xGL) < distCap && abs(yOnLine - yGL) < distCap) {
-		return true;
-	}
-
-	return false;
-}
-
-bool RectCollider(const glm::vec3& p1, const glm::vec3& p2, GLfloat xGL, GLfloat yGL) {
-	GLfloat minX = std::min(p1.x, p2.x);
-	GLfloat maxX = std::max(p1.x, p2.x);
-	GLfloat minY = std::min(p1.y, p2.y);
-	GLfloat maxY = std::max(p1.y, p2.y);
-
-	if (xGL > minX && xGL < maxX && yGL > minY && yGL < maxY) return true;
-	else return false;
 }
 
 std::string read_file(const std::string& filename) {
@@ -355,4 +353,37 @@ GLuint make_shaderProgram(const GLuint& vertexShader, const GLuint& fragmentShad
 
 	glUseProgram(shaderID);
 	return shaderID;
+}
+
+GLuint loadTexture(const std::string& filename) {
+	// stbi_load 함수를 사용하여 이미지 파일 로드
+	stbi_set_flip_vertically_on_load(true); // OpenGL 텍스처 좌표계에 맞게 이미지 뒤집기
+	int width, height, channels;
+	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &channels, 0);
+	if (!data) {
+		std::cerr << "Failed to load texture: " << filename << std::endl;
+		return 0;
+	}
+	std::cout << "Texture loaded: " << filename << " ("
+		<< width << "x" << height << ", " << channels << " channels)" << std::endl;
+
+	GLenum format = GL_RGB;
+	if (channels == 4) format = GL_RGBA;
+
+	// 텍스처 생성 및 설정
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // S 축 반복
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // T 축 반복
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // 축소 필터링
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // 확대 필터링
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	stbi_image_free(data); // 이미지 데이터 메모리 해제
+
+	return textureID; // 텍스처 ID 반환
 }
