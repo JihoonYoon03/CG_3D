@@ -142,8 +142,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 	XYZ = new DisplayBasis(2.0f);
 	sun = new Model("Models/Sphere.obj", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	light = new Model("Models/Sphere.obj", glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(1.0f, 1.0f, 1.0f));
-	light->setDefTranslate(glm::vec3{ 0.0f, 0.0f, 4.0f });
-
+	light->translate(lightPos);
 	for (int i = 0; i < 3; i++) {
 		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
 		orbit_sun[i] = new Orbit(glm::vec3(0.2f, 0.5f, 0.2f));
@@ -167,6 +166,8 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설�
 		moon[i]->setDefTranslate(glm::vec3(orbit_radius_planet, 0.0f, 0.0f));
 		moon_speed[i] = rand() / static_cast<GLfloat>(RAND_MAX / 1.5f) + 0.2f; // 0.2 ~ 1.7
 	}
+	glUniform1f(glGetUniformLocation(shaderProgramID, "shininess"), 32.0f);
+	glUniform3f(glGetUniformLocation(shaderProgramID, "viewPos"), 0.0f, 0.0f, 10.0f);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
@@ -269,7 +270,9 @@ GLvoid TimerFunc(int value)
 {
 	glm::mat4 light_trans_mat = glm::rotate(glm::mat4(1.0f), glm::radians(light_rotation_delta), glm::vec3(0.0f, 1.0f, 0.0f));
 	lightPos = glm::vec3(light_trans_mat * glm::vec4(lightPos, 1.0f));
-	light->rotate(light_rotation_delta, glm::vec3(0.0f, 1.0f, 0.0f));
+
+	light->resetModelMatrix();
+	light->translate(lightPos);
 	for (int i = 0; i < 3; i++) {
 		GLfloat offset = i == 0 ? 0 : (i == 1 ? 45.0f : -45.0f);
 		planet[i]->rotate(-offset, glm::vec3(0.0f, 0.0f, 1.0f));
